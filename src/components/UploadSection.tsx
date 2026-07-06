@@ -13,6 +13,17 @@ import { cleanTable, looksLikeDepEd, toCSV, type CleanReport } from '../lib/clea
 import { colors, clay } from '../constants/theme';
 import { Card } from './ui';
 
+// Scan the first ~10 rows for the one that looks like real headers
+// (contains "Region" or "BEIS School ID"). Returns its index, or 0.
+function findHeaderRow(sheet: XLSX.WorkSheet): number {
+  const grid = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: '' });
+  for (let i = 0; i < Math.min(grid.length, 10); i++) {
+    const cells = (grid[i] as unknown[]).map((c) => String(c).trim());
+    if (cells.includes('Region') || cells.includes('BEIS School ID')) return i;
+  }
+  return 0;
+}
+
 type State =
   | { step: 'idle' }
   | { step: 'working' }
@@ -36,8 +47,14 @@ export default function UploadSection() {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf);
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      // defval:'' keeps empty cells so our RULE 3 can count and fill them.
-      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
+      // Some files (like the DepEd export) have title rows before the real
+      // header. Find the row that contains real column names, then read
+      // from there — the browser version of pandas' header=4.
+      const header = findHeaderRow(sheet);
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+        defval: '',
+        range: header, // start at the detected header row
+      });
 
       if (rows.length === 0) {
         setState({ step: 'error', message: 'The file has no data rows.' });
