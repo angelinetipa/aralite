@@ -54,7 +54,7 @@ This reads `data/raw.xlsx`, cleans it, and writes the Parquet files the dashboar
 
 ## Demo
 
-🔗 _Live link coming soon (deploying to Vercel)._
+🔗 aralite.vercel.app
 
 📸 _Screenshots coming soon._
 
