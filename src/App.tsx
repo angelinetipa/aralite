@@ -6,7 +6,9 @@
 
 import { useEffect, useState } from 'react';
 import { getRegions, resetToDefault } from './lib/queries';
+import { getDB } from './lib/db';
 import { colors } from './constants/theme';
+import Spinner from './components/Spinner';
 import StatCards from './components/StatCards';
 import DropoffSection from './components/DropoffSection';
 import GenderSection from './components/GenderSection';
@@ -20,9 +22,17 @@ export default function App() {
   const [regions, setRegions] = useState<string[]>([]);
   const [dataVersion, setDataVersion] = useState(0);
   const [source, setSource] = useState<string | null>(null); // uploaded file name
+  const [ready, setReady] = useState(false);
 
+  // Warm up DuckDB + load region list once, THEN reveal the dashboard.
+  // This way the whole page appears together instead of six sections
+  // each flashing their own loading text.
   useEffect(() => {
-    getRegions().then(setRegions).catch(() => setRegions([]));
+    setReady(false);
+    getDB()
+      .then(() => getRegions())
+      .then((r) => { setRegions(r); setReady(true); })
+      .catch(() => { setRegions([]); setReady(true); });
   }, [dataVersion]);
 
   function handleDataLoaded(name: string) {
@@ -111,8 +121,11 @@ export default function App() {
         )}
       </div>
 
+      {/* One spinner while DuckDB warms up; then all sections at once */}
+      {!ready && <Spinner />}
+
       {/* Sections keyed by dataVersion so they re-query on data change */}
-      <div key={dataVersion}>
+      <div key={dataVersion} style={{ display: ready ? 'block' : 'none' }}>
         <StatCards region={region} />
         <DropoffSection region={region} />
         <GenderSection region={region} />

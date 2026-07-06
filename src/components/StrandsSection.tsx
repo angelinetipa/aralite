@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import { getByStrand, type StrandRow } from '../lib/queries';
 import { colors } from '../constants/theme';
-import { Card, Loading, ErrorState } from './ui';
+import { Card, ErrorState } from './ui';
 
 export default function StrandsSection({ region }: { region: string | null }) {
   const [data, setData] = useState<StrandRow[]>([]);
@@ -20,7 +20,7 @@ export default function StrandsSection({ region }: { region: string | null }) {
       .catch(() => setStatus('error'));
   }, [region]);
 
-  if (status === 'loading') return <Loading />;
+  if (status === 'loading') return null; // App spinner covers this
   if (status === 'error') return <ErrorState />;
 
   const top = data[0];

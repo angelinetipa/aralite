@@ -9,7 +9,7 @@ import {
 } from 'recharts';
 import { getByGrade, type GradeRow } from '../lib/queries';
 import { colors } from '../constants/theme';
-import { Card, Loading, ErrorState } from './ui';
+import { Card, ErrorState } from './ui';
 
 export default function DropoffSection({ region }: { region: string | null }) {
   const [data, setData] = useState<GradeRow[]>([]);
@@ -22,7 +22,7 @@ export default function DropoffSection({ region }: { region: string | null }) {
       .catch(() => setStatus('error'));
   }, [region]);
 
-  if (status === 'loading') return <Loading />;
+  if (status === 'loading') return null; // App spinner covers this
   if (status === 'error') return <ErrorState />;
 
   // Compute the G6 -> G7 loss so the subtitle states a fact, not a vibe.
