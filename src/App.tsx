@@ -11,6 +11,7 @@ import GenderSection from './components/GenderSection';
 import StrandsSection from './components/StrandsSection';
 import SectorSection from './components/SectorSection';
 import RegionsSection from './components/RegionsSection';
+import UploadSection from './components/UploadSection';
 
 export default function App() {
   const [region, setRegion] = useState<string | null>(null);
@@ -83,6 +84,7 @@ export default function App() {
       </div>
 
       <RegionsSection region={region} onPick={(r) => setRegion(r)} />
+      <UploadSection />
 
       <p style={{ color: colors.inkSoft, fontSize: 12, textAlign: 'center', margin: '8px 0 24px' }}>
         Data: DepEd Learner Information System, SY 2023–2024 · Built with DuckDB-WASM + React
