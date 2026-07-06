@@ -1,9 +1,11 @@
 // src/App.tsx
-// One-page dashboard shell: header, region filter, then every section
-// stacked. One region state drives all charts.
+// One-page dashboard shell: header, optional "using your data" banner,
+// region filter, then every section stacked. One region state drives
+// all charts. `dataVersion` bumps whenever the data source changes
+// (upload or reset) — bumping it remounts the sections so they re-query.
 
 import { useEffect, useState } from 'react';
-import { getRegions } from './lib/queries';
+import { getRegions, resetToDefault } from './lib/queries';
 import { colors } from './constants/theme';
 import StatCards from './components/StatCards';
 import DropoffSection from './components/DropoffSection';
@@ -16,15 +18,30 @@ import UploadSection from './components/UploadSection';
 export default function App() {
   const [region, setRegion] = useState<string | null>(null);
   const [regions, setRegions] = useState<string[]>([]);
+  const [dataVersion, setDataVersion] = useState(0);
+  const [source, setSource] = useState<string | null>(null); // uploaded file name
 
   useEffect(() => {
     getRegions().then(setRegions).catch(() => setRegions([]));
-  }, []);
+  }, [dataVersion]);
+
+  function handleDataLoaded(name: string) {
+    setSource(name);
+    setRegion(null);
+    setDataVersion((v) => v + 1); // remounts sections -> re-query new data
+  }
+
+  async function handleReset() {
+    await resetToDefault();
+    setSource(null);
+    setRegion(null);
+    setDataVersion((v) => v + 1);
+  }
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: '2.5rem 1.5rem', color: colors.ink }}>
 
-      {/* Header — yellow clay bar as the Aralite mark */}
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         <div style={{
           width: 10, height: 40, borderRadius: 6,
@@ -41,7 +58,29 @@ export default function App() {
         </div>
       </div>
 
-      {/* Region filter — drives every chart */}
+      {/* Banner shown only when viewing an uploaded dataset */}
+      {source && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          margin: '1.2rem 0', padding: '10px 16px', borderRadius: 12,
+          background: '#EAF0FB', border: `1px solid ${colors.blueSoft}`,
+        }}>
+          <span style={{ fontSize: 14, color: colors.blue }}>
+            Showing your uploaded data: <strong>{source}</strong>
+          </span>
+          <button
+            onClick={handleReset}
+            style={{
+              padding: '7px 14px', borderRadius: 10, cursor: 'pointer', fontSize: 13,
+              border: 'none', background: colors.blue, color: '#fff', fontWeight: 600,
+            }}
+          >
+            Back to DepEd data
+          </button>
+        </div>
+      )}
+
+      {/* Region filter */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '1.6rem 0' }}>
         <label style={{ fontSize: 14, color: colors.inkSoft }}>Region</label>
         <select
@@ -72,19 +111,19 @@ export default function App() {
         )}
       </div>
 
-      {/* One look, all insights */}
-      <StatCards region={region} />
-      <DropoffSection region={region} />
-      <GenderSection region={region} />
-
-      {/* Two smaller charts side by side on wide screens */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 0, columnGap: 20 }}>
-        <StrandsSection region={region} />
-        <SectorSection region={region} />
+      {/* Sections keyed by dataVersion so they re-query on data change */}
+      <div key={dataVersion}>
+        <StatCards region={region} />
+        <DropoffSection region={region} />
+        <GenderSection region={region} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', columnGap: 20 }}>
+          <StrandsSection region={region} />
+          <SectorSection region={region} />
+        </div>
+        <RegionsSection region={region} onPick={(r) => setRegion(r)} />
       </div>
 
-      <RegionsSection region={region} onPick={(r) => setRegion(r)} />
-      <UploadSection />
+      <UploadSection onDataLoaded={handleDataLoaded} />
 
       <p style={{ color: colors.inkSoft, fontSize: 12, textAlign: 'center', margin: '8px 0 24px' }}>
         Data: DepEd Learner Information System, SY 2023–2024 · Built with DuckDB-WASM + React

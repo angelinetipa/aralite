@@ -1,20 +1,19 @@
 // src/components/UploadSection.tsx
-// Upload your own dataset (CSV or Excel) -> we clean it in the browser
-// (rules live in src/lib/cleaning.ts) -> show a report -> download the
-// cleaned CSV. Nothing leaves the user's computer — no server involved.
-//
-// "Load into dashboard" is only offered when the file matches the
-// DepEd format (Part 2 wires it up); otherwise we warn instead of
-// breaking the charts.
+// Upload your own dataset (CSV or Excel) -> cleaned in the browser
+// (rules in src/lib/cleaning.ts) -> see a report -> download the clean
+// copy, AND (if it's DepEd-format) load it straight into the dashboard.
+// Nothing leaves the user's computer — no server.
 
 import { useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { cleanTable, looksLikeDepEd, toCSV, type CleanReport } from '../lib/cleaning';
+import { loadUploadedData } from '../lib/db';
 import { colors, clay } from '../constants/theme';
 import { Card } from './ui';
 
-// Scan the first ~10 rows for the one that looks like real headers
-// (contains "Region" or "BEIS School ID"). Returns its index, or 0.
+// Some files (like the DepEd export) have title rows before the real
+// header. Find the row with real column names — browser version of
+// pandas' header=4.
 function findHeaderRow(sheet: XLSX.WorkSheet): number {
   const grid = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: '' });
   for (let i = 0; i < Math.min(grid.length, 10); i++) {
@@ -34,26 +33,29 @@ type State =
       report: CleanReport;
       csv: string;
       isDepEd: boolean;
-    };
+      enrollmentCols: string[];
+    }
+  | { step: 'loaded'; name: string };
 
-export default function UploadSection() {
+export default function UploadSection({
+  onDataLoaded,
+}: {
+  onDataLoaded: (name: string) => void;
+}) {
   const [state, setState] = useState<State>({ step: 'idle' });
+  const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(file: File) {
     setState({ step: 'working' });
     try {
-      // SheetJS reads both .csv and .xlsx from raw bytes.
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf);
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      // Some files (like the DepEd export) have title rows before the real
-      // header. Find the row that contains real column names, then read
-      // from there — the browser version of pandas' header=4.
       const header = findHeaderRow(sheet);
       const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
         defval: '',
-        range: header, // start at the detected header row
+        range: header,
       });
 
       if (rows.length === 0) {
@@ -62,15 +64,33 @@ export default function UploadSection() {
       }
 
       const { cleaned, report } = cleanTable(rows);
+      // Enrollment columns = those ending in " Male" / " Female".
+      const enrollmentCols = Object.keys(cleaned[0]).filter(
+        (c) => / (Male|Female)$/.test(c)
+      );
       setState({
         step: 'done',
         name: file.name,
         report,
         csv: toCSV(cleaned),
         isDepEd: looksLikeDepEd(cleaned),
+        enrollmentCols,
       });
     } catch {
       setState({ step: 'error', message: 'Could not read that file. Use .csv or .xlsx.' });
+    }
+  }
+
+  async function loadIntoDashboard(csv: string, cols: string[], name: string) {
+    setLoading(true);
+    try {
+      await loadUploadedData(csv, cols);
+      onDataLoaded(name);
+      setState({ step: 'loaded', name });
+    } catch {
+      setState({ step: 'error', message: 'Could not load this file into the dashboard.' });
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -87,7 +107,7 @@ export default function UploadSection() {
     <Card
       title="Clean your own dataset"
       accent={colors.blue}
-      subtitle="Upload a CSV or Excel file — it gets cleaned right in your browser and never leaves your computer."
+      subtitle="Upload a CSV or Excel file — it's cleaned right in your browser and never leaves your computer."
     >
       <input
         ref={inputRef}
@@ -97,7 +117,7 @@ export default function UploadSection() {
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) handleFile(f);
-          e.target.value = ''; // allow re-uploading the same file
+          e.target.value = '';
         }}
       />
 
@@ -124,9 +144,22 @@ export default function UploadSection() {
         </div>
       )}
 
+      {state.step === 'loaded' && (
+        <div>
+          <p style={{ color: colors.blue, fontWeight: 600 }}>
+            ✓ Dashboard now showing: {state.name}
+          </p>
+          <button
+            onClick={() => setState({ step: 'idle' })}
+            style={{ cursor: 'pointer', padding: '8px 14px', borderRadius: 10 }}
+          >
+            Upload another
+          </button>
+        </div>
+      )}
+
       {state.step === 'done' && (
         <div>
-          {/* The cleaning report — proof, not "trust me" */}
           <table style={{ fontSize: 14, borderCollapse: 'collapse' }}>
             <tbody>
               {[
@@ -163,6 +196,22 @@ export default function UploadSection() {
             >
               Download cleaned CSV
             </button>
+
+            {state.isDepEd && (
+              <button
+                disabled={loading}
+                onClick={() => loadIntoDashboard(state.csv, state.enrollmentCols, state.name)}
+                style={{
+                  padding: '10px 18px', borderRadius: 12, cursor: 'pointer', border: 'none',
+                  background: loading ? colors.blueSoft : colors.red, color: '#fff',
+                  fontSize: 14, fontWeight: 600,
+                  boxShadow: '0 6px 14px rgba(206,17,38,0.3)',
+                }}
+              >
+                {loading ? 'Loading…' : 'Load into dashboard'}
+              </button>
+            )}
+
             <button
               onClick={() => setState({ step: 'idle' })}
               style={{

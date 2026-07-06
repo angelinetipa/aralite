@@ -122,3 +122,6 @@ export async function getTopRegions(): Promise<RegionRow[]> {
   `);
   return rows.map((r) => ({ region: r.Region, total: Number(r.total) }));
 }
+
+// Re-export so components import data-source controls from one place.
+export { resetToDefault } from './db';
