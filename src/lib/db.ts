@@ -8,39 +8,39 @@
 
 import * as duckdb from '@duckdb/duckdb-wasm';
 
-let db: duckdb.AsyncDuckDB | null = null;
+// Cache the boot PROMISE, not just the instance. If many charts load at
+// once, they all await the same single boot instead of each starting
+// their own DuckDB worker (which froze the browser).
+let dbPromise: Promise<duckdb.AsyncDuckDB> | null = null;
 
 // Boot DuckDB once and register our two parquet files as SQL tables.
 // We cache the instance so repeated calls are instant.
 export async function getDB(): Promise<duckdb.AsyncDuckDB> {
-  if (db) return db;
+  if (dbPromise) return dbPromise;
+  dbPromise = (async () => {
+    const bundle = await duckdb.selectBundle(duckdb.getJsDelivrBundles());
+    const workerUrl = URL.createObjectURL(
+      new Blob([`importScripts("${bundle.mainWorker!}");`], {
+        type: 'text/javascript',
+      })
+    );
+    const worker = new Worker(workerUrl);
+    const logger = new duckdb.ConsoleLogger(duckdb.LogLevel.WARNING);
+    const database = new duckdb.AsyncDuckDB(logger, worker);
+    await database.instantiate(bundle.mainModule, bundle.pthreadWorker);
 
-  // duckdb-wasm ships a few builds; this picks the right one for the browser.
-  const bundle = await duckdb.selectBundle(duckdb.getJsDelivrBundles());
-  // Browsers block loading a Worker script straight from a CDN (CORS).
-  // Wrap the CDN URL in a local blob so it counts as same-origin.
-  const workerUrl = URL.createObjectURL(
-    new Blob([`importScripts("${bundle.mainWorker!}");`], {
-      type: 'text/javascript',
-    })
-  );
-  const worker = new Worker(workerUrl);
-  const logger = new duckdb.ConsoleLogger(duckdb.LogLevel.WARNING);
-  db = new duckdb.AsyncDuckDB(logger, worker);
-  await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
-
-  // Point DuckDB at the parquet files served from /public/data.
-  // "read_parquet" streams them — we don't load everything into memory.
-  const base = window.location.origin;
-  const conn = await db.connect();
-  await conn.query(`
-    CREATE VIEW enrollment AS
-      SELECT * FROM read_parquet('${base}/data/enrollment.parquet');
-    CREATE VIEW schools AS
-      SELECT * FROM read_parquet('${base}/data/schools.parquet');
-  `);
-  await conn.close();
-  return db;
+    const base = window.location.origin;
+    const conn = await database.connect();
+    await conn.query(`
+      CREATE VIEW enrollment AS
+        SELECT * FROM read_parquet('${base}/data/enrollment.parquet');
+      CREATE VIEW schools AS
+        SELECT * FROM read_parquet('${base}/data/schools.parquet');
+    `);
+    await conn.close();
+    return database;
+  })();
+  return dbPromise;
 }
 
 // Run any SQL and get back plain JS objects for charts.

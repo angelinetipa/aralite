@@ -1,6 +1,6 @@
-// src/components/RegionsTab.tsx
-// All regions ranked by enrollment. This is also the drill-down:
-// clicking a bar sets the region filter for the whole dashboard.
+// src/components/RegionsSection.tsx
+// All 18 regions ranked. interval={0} + enough height so EVERY label
+// shows (no alternating skips). Clicking a bar filters the dashboard.
 
 import { useEffect, useState } from 'react';
 import {
@@ -10,9 +10,8 @@ import { getTopRegions, type RegionRow } from '../lib/queries';
 import { colors } from '../constants/theme';
 import { Card, Loading, ErrorState } from './ui';
 
-export default function RegionsTab({
-  region,
-  onPick,
+export default function RegionsSection({
+  region, onPick,
 }: {
   region: string | null;
   onPick: (r: string) => void;
@@ -21,12 +20,8 @@ export default function RegionsTab({
   const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading');
 
   useEffect(() => {
-    // This list never changes with the filter, so we load it once.
     getTopRegions()
-      .then((rows) => {
-        setData(rows);
-        setStatus('ready');
-      })
+      .then((rows) => { setData(rows); setStatus('ready'); })
       .catch(() => setStatus('error'));
   }, []);
 
@@ -36,15 +31,13 @@ export default function RegionsTab({
   return (
     <Card
       title="Enrollment by region"
+      accent={colors.yellow}
       subtitle="Click any bar to filter the whole dashboard to that region."
     >
-      <div style={{ height: 520 }}>
+      {/* 34px per row guarantees room for every label */}
+      <div style={{ height: Math.max(420, data.length * 34) }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={data}
-            layout="vertical"
-            margin={{ top: 8, right: 24, bottom: 8, left: 8 }}
-          >
+          <BarChart data={data} layout="vertical" margin={{ top: 8, right: 24, bottom: 8, left: 8 }}>
             <CartesianGrid stroke={colors.line} horizontal={false} />
             <XAxis
               type="number"
@@ -52,25 +45,19 @@ export default function RegionsTab({
               tickFormatter={(v) => `${(v / 1_000_000).toFixed(1)}M`}
             />
             <YAxis
-              type="category"
-              dataKey="region"
-              width={130}
-              tick={{ fontSize: 11, fill: colors.ink }}
+              type="category" dataKey="region" width={130}
+              interval={0}                    // show EVERY region, no skipping
+              tick={{ fontSize: 12, fill: colors.ink }}
             />
             <Tooltip formatter={(v) => Number(v).toLocaleString()} />
             <Bar
-              dataKey="total"
-              radius={[0, 4, 4, 0]}
+              dataKey="total" radius={[0, 6, 6, 0]}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               onClick={(d: any) => d?.region && onPick(d.region)}
               style={{ cursor: 'pointer' }}
             >
               {data.map((row, i) => (
-                // Highlight the currently-selected region in red.
-                <Cell
-                  key={i}
-                  fill={row.region === region ? colors.red : colors.blue}
-                />
+                <Cell key={i} fill={row.region === region ? colors.red : colors.blue} />
               ))}
             </Bar>
           </BarChart>

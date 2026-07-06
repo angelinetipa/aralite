@@ -1,73 +1,102 @@
 // src/lib/queries.ts
-// The service layer: every SQL query lives here, nowhere else.
-// Components call these functions — they never write SQL themselves.
-// (UI -> hook -> this file -> DuckDB. Same rule as Fyropy.)
-//
-// Each query takes an optional `region`. When set, we filter to that
-// region; when null, we show the whole country. One codepath, both cases.
+// Service layer: every SQL query lives here, nowhere else.
+// Components never write SQL. (UI -> section -> here -> DuckDB.)
+// Every query accepts an optional region filter.
 
 import { query } from './db';
 import { GRADE_ORDER } from '../constants/theme';
 
-// Build a WHERE clause only if a region is chosen. We join enrollment
-// to schools because the region lives on the schools table.
-function regionFilter(region: string | null): string {
+function regionFilter(region: string | null, alias = 's'): string {
   if (!region) return '';
-  // Escape single quotes to keep the SQL safe.
   const safe = region.replace(/'/g, "''");
-  return `WHERE s.Region = '${safe}'`;
+  return `WHERE ${alias}.Region = '${safe}'`;
 }
 
-// List of regions for the filter dropdown.
+// Shared JOIN — enrollment rows + their school info.
+const JOINED = `
+  FROM enrollment e
+  JOIN schools s ON e."BEIS School ID" = s."BEIS School ID"
+`;
+
 export async function getRegions(): Promise<string[]> {
-  const rows = await query<{ Region: string }>(`
-    SELECT DISTINCT Region FROM schools ORDER BY Region
-  `);
+  const rows = await query<{ Region: string }>(
+    `SELECT DISTINCT Region FROM schools ORDER BY Region`
+  );
   return rows.map((r) => r.Region);
 }
 
-// Total learners (one big number for the hero).
-export async function getTotal(region: string | null): Promise<number> {
-  const rows = await query<{ total: bigint }>(`
-    SELECT SUM(e.enrollment) AS total
-    FROM enrollment e
-    JOIN schools s ON e.\"BEIS School ID\" = s.\"BEIS School ID\"
-    ${regionFilter(region)}
-  `);
-  return Number(rows[0]?.total ?? 0);
+// ---- headline numbers -------------------------------------------------
+
+export type Headline = {
+  total: number;
+  schools: number;
+  shs: number;
+  topRegion: string;
+};
+
+export async function getHeadline(region: string | null): Promise<Headline> {
+  const where = regionFilter(region);
+  const [tot, sch, shs, top] = await Promise.all([
+    query<{ v: bigint }>(`SELECT SUM(e.enrollment) v ${JOINED} ${where}`),
+    query<{ v: bigint }>(
+      `SELECT COUNT(*) v FROM schools s ${regionFilter(region)}`
+    ),
+    query<{ v: bigint }>(
+      `SELECT SUM(e.enrollment) v ${JOINED} ${where ? where + ' AND' : 'WHERE'} e.grade IN ('G11','G12')`
+    ),
+    query<{ Region: string }>(`
+      SELECT s.Region, SUM(e.enrollment) t ${JOINED}
+      GROUP BY s.Region ORDER BY t DESC LIMIT 1
+    `),
+  ]);
+  return {
+    total: Number(tot[0]?.v ?? 0),
+    schools: Number(sch[0]?.v ?? 0),
+    shs: Number(shs[0]?.v ?? 0),
+    topRegion: top[0]?.Region ?? '—',
+  };
 }
 
-// Enrollment per grade, in school-age order (the drop-off story).
+// ---- charts ------------------------------------------------------------
+
 export type GradeRow = { grade: string; total: number };
 export async function getByGrade(region: string | null): Promise<GradeRow[]> {
   const rows = await query<{ grade: string; total: bigint }>(`
-    SELECT e.grade, SUM(e.enrollment) AS total
-    FROM enrollment e
-    JOIN schools s ON e.\"BEIS School ID\" = s.\"BEIS School ID\"
-    ${regionFilter(region)}
-    GROUP BY e.grade
+    SELECT e.grade, SUM(e.enrollment) total ${JOINED}
+    ${regionFilter(region)} GROUP BY e.grade
   `);
-  const ordered: GradeRow[] = [];
+  const out: GradeRow[] = [];
   for (const g of GRADE_ORDER) {
-    const found = rows.find((r) => r.grade === g);
-    if (found) ordered.push({ grade: g, total: Number(found.total) });
+    const f = rows.find((r) => r.grade === g);
+    if (f) out.push({ grade: g, total: Number(f.total) });
   }
-  return ordered;
+  return out;
 }
 
-// Senior-high enrollment per strand (the SHS choice-gap story).
-// Only G11/G12 have strands; we clean up the labels for display.
+// Gender split per grade — two lines on one chart.
+export type GenderRow = { grade: string; Male: number; Female: number };
+export async function getGenderByGrade(region: string | null): Promise<GenderRow[]> {
+  const rows = await query<{ grade: string; gender: string; total: bigint }>(`
+    SELECT e.grade, e.gender, SUM(e.enrollment) total ${JOINED}
+    ${regionFilter(region)} GROUP BY e.grade, e.gender
+  `);
+  const out: GenderRow[] = [];
+  for (const g of GRADE_ORDER) {
+    const m = rows.find((r) => r.grade === g && r.gender === 'Male');
+    const f = rows.find((r) => r.grade === g && r.gender === 'Female');
+    if (m || f)
+      out.push({ grade: g, Male: Number(m?.total ?? 0), Female: Number(f?.total ?? 0) });
+  }
+  return out;
+}
+
 export type StrandRow = { strand: string; total: number };
 export async function getByStrand(region: string | null): Promise<StrandRow[]> {
+  const where = regionFilter(region);
   const rows = await query<{ strand: string; total: bigint }>(`
-    SELECT e.strand, SUM(e.enrollment) AS total
-    FROM enrollment e
-    JOIN schools s ON e.\"BEIS School ID\" = s.\"BEIS School ID\"
-    ${regionFilter(region) || 'WHERE 1=1'}
-      AND e.grade IN ('G11', 'G12')
-      AND e.strand IS NOT NULL
-    GROUP BY e.strand
-    ORDER BY total DESC
+    SELECT e.strand, SUM(e.enrollment) total ${JOINED}
+    ${where ? where + ' AND' : 'WHERE'} e.grade IN ('G11','G12') AND e.strand IS NOT NULL
+    GROUP BY e.strand ORDER BY total DESC
   `);
   return rows.map((r) => ({
     strand: r.strand.replace('ACAD - ', '').replace('ACAD ', ''),
@@ -75,15 +104,21 @@ export async function getByStrand(region: string | null): Promise<StrandRow[]> {
   }));
 }
 
-// Top regions by total enrollment (the Regions tab).
+// Public vs Private learners.
+export type SectorRow = { sector: string; total: number };
+export async function getBySector(region: string | null): Promise<SectorRow[]> {
+  const rows = await query<{ Sector: string; total: bigint }>(`
+    SELECT s.Sector, SUM(e.enrollment) total ${JOINED}
+    ${regionFilter(region)} GROUP BY s.Sector ORDER BY total DESC
+  `);
+  return rows.map((r) => ({ sector: r.Sector, total: Number(r.total) }));
+}
+
 export type RegionRow = { region: string; total: number };
 export async function getTopRegions(): Promise<RegionRow[]> {
   const rows = await query<{ Region: string; total: bigint }>(`
-    SELECT s.Region, SUM(e.enrollment) AS total
-    FROM enrollment e
-    JOIN schools s ON e.\"BEIS School ID\" = s.\"BEIS School ID\"
-    GROUP BY s.Region
-    ORDER BY total DESC
+    SELECT s.Region, SUM(e.enrollment) total ${JOINED}
+    GROUP BY s.Region ORDER BY total DESC
   `);
   return rows.map((r) => ({ region: r.Region, total: Number(r.total) }));
 }
