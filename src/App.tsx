@@ -1,97 +1,109 @@
 // src/App.tsx
-// Step 2 proof: one SQL query -> one chart. This renders the hero
-// "drop-off story" — total learners per grade, showing where the
-// system loses students (the G6 -> G7 dip).
-//
-// Once this works, we build real pages on top. For now it's the
-// smallest thing that proves the whole pipeline is wired end to end.
+// The shell: header, region filter, and tab switcher. It owns two
+// pieces of state — the active tab and the chosen region — and passes
+// the region down so every tab re-queries when it changes.
 
 import { useEffect, useState } from 'react';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from 'recharts';
-import { query } from './lib/db';
-import { colors, GRADE_ORDER } from './constants/theme';
+import { getRegions } from './lib/queries';
+import { colors } from './constants/theme';
+import OverviewTab from './components/OverviewTab';
+import StrandsTab from './components/StrandsTab';
+import RegionsTab from './components/RegionsTab';
 
-type GradeRow = { grade: string; total: number };
+type Tab = 'overview' | 'strands' | 'regions';
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'strands', label: 'Strands' },
+  { id: 'regions', label: 'Regions' },
+];
 
 export default function App() {
-  const [data, setData] = useState<GradeRow[]>([]);
-  const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading');
+  const [tab, setTab] = useState<Tab>('overview');
+  const [region, setRegion] = useState<string | null>(null);
+  const [regions, setRegions] = useState<string[]>([]);
 
   useEffect(() => {
-    // Sum enrollment per grade. BIGINT from DuckDB comes back as a
-    // JS BigInt, so we cast to a normal number for Recharts.
-    query<{ grade: string; total: bigint }>(`
-      SELECT grade, SUM(enrollment) AS total
-      FROM enrollment
-      GROUP BY grade
-    `)
-      .then((rows) => {
-        const ordered: GradeRow[] = [];
-        for (const g of GRADE_ORDER) {
-          const found = rows.find((r) => r.grade === g);
-          if (found) ordered.push({ grade: g, total: Number(found.total) });
-        }
-        setData(ordered);
-        setStatus('ready');
-      })
-      .catch((err) => {
-        console.error(err);
-        setStatus('error');
-      });
+    getRegions().then(setRegions).catch(() => setRegions([]));
   }, []);
 
-  const total = data.reduce((sum, r) => sum + r.total, 0);
-
   return (
-    <div style={{ maxWidth: 880, margin: '0 auto', padding: '2rem 1.5rem', fontFamily: 'system-ui, sans-serif', color: colors.ink }}>
-      <h1 style={{ fontSize: 28, fontWeight: 600, margin: 0 }}>Aralite</h1>
-      <p style={{ color: colors.inkSoft, marginTop: 4 }}>
-        DepEd enrollment, SY 2023–2024 · powered by DuckDB in your browser
-      </p>
+    <div style={{ minHeight: '100vh', background: colors.bg }}>
+      <div style={{ maxWidth: 880, margin: '0 auto', padding: '2rem 1.5rem', fontFamily: 'system-ui, sans-serif', color: colors.ink }}>
 
-      {status === 'loading' && <p>Loading data…</p>}
-      {status === 'error' && <p style={{ color: colors.red }}>Could not load data. Check the parquet files in /public/data.</p>}
-
-      {status === 'ready' && (
-        <>
-          <div style={{ margin: '1.5rem 0' }}>
-            <div style={{ fontSize: 13, color: colors.inkSoft }}>Total learners nationwide</div>
-            <div style={{ fontSize: 40, fontWeight: 700, color: colors.blue }}>
-              {total.toLocaleString()}
-            </div>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 8, height: 32, background: colors.yellow, borderRadius: 2 }} />
+          <div>
+            <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Aralite</h1>
+            <p style={{ color: colors.inkSoft, margin: 0, fontSize: 14 }}>
+              DepEd enrollment · SY 2023–2024 · in-browser SQL analytics
+            </p>
           </div>
+        </div>
 
-          <h2 style={{ fontSize: 18, fontWeight: 600 }}>Where enrollment drops off</h2>
-          <p style={{ color: colors.inkSoft, marginTop: 0, fontSize: 14 }}>
-            Notice the dip from Grade 6 to Grade 7 — students lost at the
-            elementary-to-junior-high transition.
-          </p>
+        {/* Region filter */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '1.5rem 0' }}>
+          <label style={{ fontSize: 14, color: colors.inkSoft }}>Region</label>
+          <select
+            value={region ?? ''}
+            onChange={(e) => setRegion(e.target.value || null)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: 8,
+              border: `1px solid ${colors.line}`,
+              background: colors.surface,
+              fontSize: 14,
+            }}
+          >
+            <option value="">All regions (nationwide)</option>
+            {regions.map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+          {region && (
+            <button
+              onClick={() => setRegion(null)}
+              style={{
+                padding: '8px 12px', borderRadius: 8, cursor: 'pointer',
+                border: `1px solid ${colors.line}`, background: colors.surface, fontSize: 14,
+              }}
+            >
+              Clear
+            </button>
+          )}
+        </div>
 
-          <div style={{ height: 360, marginTop: 16 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data} margin={{ top: 8, right: 16, bottom: 8, left: 8 }}>
-                <CartesianGrid stroke={colors.line} vertical={false} />
-                <XAxis dataKey="grade" tick={{ fontSize: 12, fill: colors.inkSoft }} />
-                <YAxis
-                  tick={{ fontSize: 12, fill: colors.inkSoft }}
-                  tickFormatter={(v) => `${(v / 1_000_000).toFixed(1)}M`}
-                />
-                <Tooltip formatter={(v) => Number(v).toLocaleString()} />
-                <Line
-                  type="monotone"
-                  dataKey="total"
-                  stroke={colors.blue}
-                  strokeWidth={3}
-                  dot={{ r: 4, fill: colors.blue }}
-                  activeDot={{ r: 6, fill: colors.red }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </>
-      )}
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${colors.line}`, marginBottom: 24 }}>
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              style={{
+                padding: '10px 16px',
+                border: 'none',
+                background: 'none',
+                cursor: 'pointer',
+                fontSize: 15,
+                fontWeight: tab === t.id ? 600 : 400,
+                color: tab === t.id ? colors.blue : colors.inkSoft,
+                borderBottom: tab === t.id ? `2px solid ${colors.blue}` : '2px solid transparent',
+                marginBottom: -1,
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Active tab */}
+        {tab === 'overview' && <OverviewTab region={region} />}
+        {tab === 'strands' && <StrandsTab region={region} />}
+        {tab === 'regions' && (
+          <RegionsTab region={region} onPick={(r) => { setRegion(r); setTab('overview'); }} />
+        )}
+      </div>
     </div>
   );
 }
