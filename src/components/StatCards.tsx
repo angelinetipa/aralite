@@ -10,12 +10,13 @@ function StatCard({ label, value, accent }: { label: string; value: string; acce
   return (
     <div style={{
       ...clay.card,
-      flex: '1 1 180px',
-      padding: '1.1rem 1.3rem',
+      flex: '1 0 150px',
+      minWidth: 150,
+      padding: '1.1rem 1.2rem',
       borderTop: `4px solid ${accent}`,
     }}>
       <div style={{ fontSize: 13, color: colors.inkSoft }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 800, color: colors.ink, marginTop: 4 }}>{value}</div>
+      <div style={{ fontSize: 23, fontWeight: 800, color: colors.ink, marginTop: 4, whiteSpace: 'nowrap' }}>{value}</div>
     </div>
   );
 }
@@ -30,7 +31,7 @@ export default function StatCards({ filters }: { filters: Filters }) {
   if (!h) return null;
 
   return (
-    <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', gap: 14, marginBottom: 24, overflowX: 'auto' }}>
       <StatCard
         label={'Total learners'}
         value={h.total.toLocaleString()}
@@ -39,6 +40,8 @@ export default function StatCards({ filters }: { filters: Filters }) {
       <StatCard label="Schools" value={h.schools.toLocaleString()} accent={colors.yellow} />
       <StatCard label="Senior-high learners" value={h.shs.toLocaleString()} accent={colors.red} />
       <StatCard label="Largest region" value={h.topRegion} accent={colors.blue} />
+      <StatCard label="Male / Female" value={`${h.malePct}% / ${h.femalePct}%`} accent={colors.red} />
+      <StatCard label="Avg per school" value={h.avgPerSchool.toLocaleString()} accent={colors.blue} />
     </div>
   );
 }

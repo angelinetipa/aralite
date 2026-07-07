@@ -22,7 +22,9 @@ function where(f: Filters, extra: string[] = []): string {
 
 export type Headline = {
   total: number; schools: number; shs: number; topRegion: string;
-  publicPct: number; male: number; female: number; avgPerSchool: number;
+  publicPct: number; privatePct: number;
+  male: number; female: number; malePct: number; femalePct: number;
+  avgPerSchool: number;
 };
 
 export async function getHeadline(f: Filters): Promise<Headline> {
@@ -46,12 +48,14 @@ export async function getHeadline(f: Filters): Promise<Headline> {
   const pub = Number(sector.find((r) => r.sector === 'Public')?.v ?? 0);
   const male = Number(gender.find((r) => r.gender === 'Male')?.v ?? 0);
   const female = Number(gender.find((r) => r.gender === 'Female')?.v ?? 0);
+  const publicPct = total ? Math.round((pub / total) * 100) : 0;
+  const malePct = male + female ? Math.round((male / (male + female)) * 100) : 0;
   return {
     total, schools,
     shs: Number(shs[0]?.v ?? 0),
     topRegion: top[0]?.Region ?? '—',
-    publicPct: total ? Math.round((pub / total) * 100) : 0,
-    male, female,
+    publicPct, privatePct: 100 - publicPct,
+    male, female, malePct, femalePct: 100 - malePct,
     avgPerSchool: schools ? Math.round(total / schools) : 0,
   };
 }
