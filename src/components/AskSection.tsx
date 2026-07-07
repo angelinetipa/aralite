@@ -10,7 +10,7 @@ import {
 } from 'recharts';
 import { questionToSQL, isSafeSelect, type Provider } from '../lib/ai';
 import { query } from '../lib/db';
-import { colors, clay } from '../constants/theme';
+import { colors } from '../constants/theme';
 import { Card } from './ui';
 
 type Row = Record<string, unknown>;

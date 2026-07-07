@@ -46,7 +46,7 @@ export async function questionToSQL(
 ): Promise<string> {
   const prompt = `${SCHEMA}\nQuestion: ${question}\nSQL:`;
 
-  let text = '';
+  let text: string;
   if (provider === 'groq') {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',

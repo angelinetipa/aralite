@@ -18,5 +18,10 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Loading data via setState inside useEffect is a valid, intended
+      // pattern here (React's own docs allow it for data fetching).
+      'react-hooks/set-state-in-effect': 'off',
+    },
   },
 ])

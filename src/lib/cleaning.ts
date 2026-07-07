@@ -88,7 +88,7 @@ export function cleanTable(
     const out: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(row)) {
       if (typeof value === 'string') {
-        let v = fixMojibake(value);
+        const v = fixMojibake(value);
         if (v !== value) mojibakeFixed++;
         const hadJunk = /^[-#*.'"\s]/.test(v) && !INVALID.has(v.trim().toUpperCase());
         const t = tidy(v);
