@@ -17,6 +17,7 @@ import StrandsSection from './components/StrandsSection';
 import SectorSection from './components/SectorSection';
 import RegionsSection from './components/RegionsSection';
 import UploadSection from './components/UploadSection';
+import FinderSection from './components/FinderSection';
 
 export default function App() {
   const [region, setRegion] = useState<string | null>(null);
@@ -50,7 +51,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2.5rem 2rem', color: colors.ink }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', padding: '2.5rem 1.5rem', color: colors.ink }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -152,6 +153,8 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      <FinderSection />
 
       <UploadSection onDataLoaded={handleDataLoaded} />
 

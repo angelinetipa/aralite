@@ -125,3 +125,100 @@ export async function getTopRegions(): Promise<RegionRow[]> {
 
 // Re-export so components import data-source controls from one place.
 export { resetToDefault } from './db';
+
+// ---- SCHOOL FINDER ----------------------------------------------------
+// Turns Aralite into a tool: search 60k schools by name/ID + location.
+
+export type SchoolFilters = {
+  region?: string; province?: string; division?: string;
+  municipality?: string; barangay?: string;
+};
+
+// Build a safe WHERE from whatever filters are set.
+function schoolWhere(f: SchoolFilters, search: string): string {
+  const parts: string[] = [];
+  const esc = (v: string) => v.replace(/'/g, "''");
+  if (f.region) parts.push(`"Region" = '${esc(f.region)}'`);
+  if (f.province) parts.push(`"Province" = '${esc(f.province)}'`);
+  if (f.division) parts.push(`"Division" = '${esc(f.division)}'`);
+  if (f.municipality) parts.push(`"Municipality" = '${esc(f.municipality)}'`);
+  if (f.barangay) parts.push(`"Barangay" = '${esc(f.barangay)}'`);
+  if (search.trim()) {
+    const s = esc(search.trim());
+    // match school name (any part) OR exact-ish school ID
+    parts.push(`(LOWER("School Name") LIKE '%${s.toLowerCase()}%' OR CAST("BEIS School ID" AS VARCHAR) LIKE '${s}%')`);
+  }
+  return parts.length ? 'WHERE ' + parts.join(' AND ') : '';
+}
+
+// Distinct values for one dropdown, narrowed by the filters above it.
+export async function getFilterOptions(
+  column: 'Region' | 'Province' | 'Division' | 'Municipality' | 'Barangay',
+  f: SchoolFilters
+): Promise<string[]> {
+  const where = schoolWhere(f, '');
+  const rows = await query<{ v: string }>(`
+    SELECT DISTINCT "${column}" v FROM schools ${where}
+    ORDER BY v LIMIT 2000
+  `);
+  return rows.map((r) => r.v).filter(Boolean);
+}
+
+export type SchoolHit = {
+  id: string; name: string; region: string;
+  municipality: string; sector: string; total: number;
+};
+
+// Search results — capped so the browser stays snappy.
+export async function searchSchools(f: SchoolFilters, search: string): Promise<SchoolHit[]> {
+  const where = schoolWhere(f, search);
+  const rows = await query<{
+    id: number; name: string; region: string;
+    municipality: string; sector: string; total: number;
+  }>(`
+    SELECT "BEIS School ID" id, "School Name" name, "Region" region,
+           "Municipality" municipality, "Sector" sector,
+           "Total Enrollment" total
+    FROM schools ${where}
+    ORDER BY "Total Enrollment" DESC
+    LIMIT 50
+  `);
+  return rows.map((r) => ({
+    id: String(r.id), name: r.name, region: r.region,
+    municipality: r.municipality, sector: r.sector, total: Number(r.total),
+  }));
+}
+
+export type SchoolProfile = {
+  info: Record<string, string>;
+  total: number; male: number; female: number;
+  byGrade: { grade: string; total: number }[];
+};
+
+// Full profile for one school (shown when a result is clicked).
+export async function getSchoolProfile(id: string): Promise<SchoolProfile> {
+  const esc = id.replace(/'/g, "''");
+  const info = await query<Record<string, string>>(`
+    SELECT "School Name", "BEIS School ID", "Region", "Province",
+           "Division", "Municipality", "Barangay", "Street Address",
+           "Sector", "School Type", "Total Enrollment"
+    FROM schools WHERE CAST("BEIS School ID" AS VARCHAR) = '${esc}' LIMIT 1
+  `);
+  const g = await query<{ grade: string; gender: string; total: bigint }>(`
+    SELECT e.grade, e.gender, SUM(e.enrollment) total
+    FROM enrollment e
+    WHERE CAST(e."BEIS School ID" AS VARCHAR) = '${esc}'
+    GROUP BY e.grade, e.gender
+  `);
+  const order = ['K','G1','G2','G3','G4','G5','G6','G7','G8','G9','G10','G11','G12','Elem NG','JHS NG'];
+  const byGrade = order.map((gr) => ({
+    grade: gr,
+    total: g.filter((r) => r.grade === gr).reduce((a, r) => a + Number(r.total), 0),
+  })).filter((x) => x.total > 0);
+  const male = g.filter((r) => r.gender === 'Male').reduce((a, r) => a + Number(r.total), 0);
+  const female = g.filter((r) => r.gender === 'Female').reduce((a, r) => a + Number(r.total), 0);
+  return {
+    info: info[0] ?? {},
+    total: male + female, male, female, byGrade,
+  };
+}
