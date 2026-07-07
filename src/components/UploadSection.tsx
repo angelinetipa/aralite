@@ -167,8 +167,10 @@ export default function UploadSection({
                 ['Rows kept', state.report.rows.toLocaleString() + ' (none deleted)'],
                 ['Columns', String(state.report.cols)],
                 ['Encoding repairs (Ã‘ → Ñ)', String(state.report.mojibakeFixed)],
+                ['Leading junk stripped', String(state.report.junkStripped)],
                 ['Whitespace fixes', String(state.report.whitespaceFixed)],
-                ['Empty cells labeled', String(state.report.emptiesFilled)],
+                ['Invalid values labeled', String(state.report.invalidLabeled)],
+                ['School names standardized', String(state.report.namesStandardized)],
               ].map(([k, v]) => (
                 <tr key={k}>
                   <td style={{ padding: '4px 16px 4px 0', color: colors.inkSoft }}>{k}</td>

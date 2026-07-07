@@ -17,8 +17,8 @@ import GenderSection from './components/GenderSection';
 import StrandsSection from './components/StrandsSection';
 import SectorSection from './components/SectorSection';
 import RegionsSection from './components/RegionsSection';
-// import FinderSection from './components/FinderSection';
 import UploadSection from './components/UploadSection';
+import AskSection from './components/AskSection';
 
 export default function App() {
   const [filters, setFilters] = useState<Filters>({});
@@ -121,7 +121,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* <FinderSection /> */}
+        <AskSection />
       </div>
 
       <UploadSection onDataLoaded={handleDataLoaded} />

@@ -1,71 +1,102 @@
 // src/lib/cleaning.ts
-// ALL cleaning rules in one file — the browser version of pipeline/clean.py.
-// Read top to bottom to learn what each rule does and why.
-// These rules are GENERIC: they repair values but never delete rows
-// or columns (the zero-data-loss rule).
+// ALL browser cleaning rules in one file — the JS twin of
+// pipeline/clean.py. Read top to bottom to learn each rule and why.
+// Rules REPAIR values but never delete rows or columns (zero data loss).
 
 export type CleanReport = {
   rows: number;
   cols: number;
-  mojibakeFixed: number;   // Ã‘ -> Ñ style repairs
-  whitespaceFixed: number; // trimmed / double spaces collapsed
-  emptiesFilled: number;   // blank cells -> "Not Provided"
+  mojibakeFixed: number;    // Ã‘ -> Ñ style repairs
+  junkStripped: number;     // leading -, #, *, quotes removed
+  whitespaceFixed: number;  // trimmed / double spaces collapsed
+  invalidLabeled: number;   // 'N/A', 'NONE', '-', blanks -> "Not Provided"
+  namesStandardized: number; // ES -> Elementary School (new column)
 };
 
-// RULE 1 — Fix mojibake.
-// Text saved as UTF-8 but read as Latin-1 turns "Ñ" into "Ã‘".
-// We reverse the bad decode instead of deleting the weird characters —
-// deleting would corrupt real place names.
+// RULE 1 — Fix mojibake. Text saved as UTF-8 but read as Latin-1 turns
+// "Ñ" into "Ã‘". We reverse the bad decode instead of deleting.
 function fixMojibake(text: string): string {
-  if (!/[ÃÂ]/.test(text)) return text; // cheap check first
+  if (!/[ÃÂ]/.test(text)) return text;
   try {
-    // escape() gives Latin-1 style bytes; decodeURIComponent reads
-    // them back as UTF-8 — the same round-trip as Python's
-    // .encode('latin-1').decode('utf-8').
-    const repaired = decodeURIComponent(escape(text));
-    return repaired;
+    return decodeURIComponent(escape(text));
   } catch {
-    return text; // not mojibake — leave untouched
+    return text;
   }
 }
 
-// RULE 2 — Normalize whitespace.
-// "Bacarra  I" and "Bacarra I" must count as ONE value in groupings.
-// We trim the edges and collapse repeated spaces.
-function squeezeWhitespace(text: string): string {
-  return text.replace(/\s+/g, ' ').trim();
+// RULE 2 — Strip leading junk characters (-, #, *, ., quotes) that are
+// data-entry noise, then normalize whitespace so "A  B" == "A B".
+function tidy(text: string): string {
+  return text.replace(/^[-#*.'"\s]+/, '').replace(/\s+/g, ' ').trim();
 }
 
-// RULE 3 — Fill empty cells with an explicit label.
-// An explicit "Not Provided" is honest and filterable; a silent blank
-// hides missing data. We never drop the row.
+// RULE 3 — Replace invalid/placeholder text with an explicit label.
+// 'N/A', 'NONE', '-' etc. are noise pretending to be data. An explicit
+// "Not Provided" is honest and filterable. (Numbers are untouched —
+// a 0 enrollment is real information.)
+const INVALID = new Set(['N/A', 'NA', 'N.A.', 'N / A', '-', '*', '0', '.', "'", 'NONE', 'NULL', '']);
 const EMPTY_LABEL = 'Not Provided';
 
+// RULE 4 — Standardize school-name abbreviations into a NEW column
+// ("School Name Clean") so the official name is never altered.
+const ABBREV: [RegExp, string][] = [
+  [/\bE\/S\b/g, 'Elementary School'],
+  [/\bElem\.?\b/g, 'Elementary School'],
+  [/\bES\b/g, 'Elementary School'],
+  [/\bNHS\b/g, 'National High School'],
+  [/\bCES\b/g, 'Central Elementary School'],
+  [/\bCS\b/g, 'Central School'],
+  [/\bP\/S\b/g, 'Primary School'],
+  [/\bPS\b/g, 'Primary School'],
+  [/\bHS\b/g, 'High School'],
+  [/\bLC\b/g, 'Learning Center'],
+  [/\bSch\.\B/g, 'School'],
+  [/\bMem\.\B/g, 'Memorial'],
+  [/\bIncorporated\b/g, 'Inc.'],
+];
+
+function expandName(name: string): string {
+  let out = name;
+  for (const [pat, repl] of ABBREV) out = out.replace(pat, repl);
+  return out.replace(/\s+/g, ' ').trim();
+}
+
 // Run all rules over a table (array of row objects from CSV/Excel).
-// Returns the cleaned table plus a report you can show the user —
-// a data engineer proves what changed, never says "trust me".
+// Returns the cleaned table + a report — proof, never "trust me".
 export function cleanTable(
   rows: Record<string, unknown>[]
 ): { cleaned: Record<string, unknown>[]; report: CleanReport } {
-  let mojibakeFixed = 0;
-  let whitespaceFixed = 0;
-  let emptiesFilled = 0;
+  let mojibakeFixed = 0, junkStripped = 0, whitespaceFixed = 0;
+  let invalidLabeled = 0, namesStandardized = 0;
 
   const cleaned = rows.map((row) => {
     const out: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(row)) {
-      if (value === null || value === undefined || value === '') {
-        out[key] = EMPTY_LABEL;
-        emptiesFilled++;
-      } else if (typeof value === 'string') {
+      if (typeof value === 'string') {
         let v = fixMojibake(value);
         if (v !== value) mojibakeFixed++;
-        const squeezed = squeezeWhitespace(v);
-        if (squeezed !== v) whitespaceFixed++;
-        out[key] = squeezed;
+        const hadJunk = /^[-#*.'"\s]/.test(v) && !INVALID.has(v.trim().toUpperCase());
+        const t = tidy(v);
+        if (hadJunk) junkStripped++;
+        else if (t !== v) whitespaceFixed++;
+        if (INVALID.has(t.toUpperCase())) {
+          out[key] = EMPTY_LABEL;
+          invalidLabeled++;
+        } else {
+          out[key] = t;
+        }
+      } else if (value === null || value === undefined) {
+        out[key] = EMPTY_LABEL;
+        invalidLabeled++;
       } else {
         out[key] = value; // numbers pass through untouched
       }
+    }
+    // RULE 4 applies only when a School Name column exists.
+    if (typeof out['School Name'] === 'string') {
+      const clean = expandName(out['School Name'] as string);
+      out['School Name Clean'] = clean;
+      if (clean !== out['School Name']) namesStandardized++;
     }
     return out;
   });
@@ -75,34 +106,28 @@ export function cleanTable(
     report: {
       rows: cleaned.length,
       cols: cleaned[0] ? Object.keys(cleaned[0]).length : 0,
-      mojibakeFixed,
-      whitespaceFixed,
-      emptiesFilled,
+      mojibakeFixed, junkStripped, whitespaceFixed,
+      invalidLabeled, namesStandardized,
     },
   };
 }
 
-// Detect if an uploaded file matches the DepEd enrollment format —
-// used to decide whether "Load into dashboard" is safe to offer.
+// Detect if a file matches the DepEd enrollment format.
 export function looksLikeDepEd(rows: Record<string, unknown>[]): boolean {
   if (!rows[0]) return false;
   const cols = Object.keys(rows[0]);
-  const required = ['Region', 'BEIS School ID', 'School Name'];
-  return required.every((c) => cols.includes(c));
+  return ['Region', 'BEIS School ID', 'School Name'].every((c) => cols.includes(c));
 }
 
 // Turn the cleaned table back into a CSV string for download.
-// Quotes any value containing commas/quotes/newlines (CSV rules).
 export function toCSV(rows: Record<string, unknown>[]): string {
   if (!rows[0]) return '';
   const cols = Object.keys(rows[0]);
-  const escape = (v: unknown) => {
+  const esc = (v: unknown) => {
     const s = String(v ?? '');
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const lines = [cols.join(',')];
-  for (const row of rows) {
-    lines.push(cols.map((c) => escape(row[c])).join(','));
-  }
+  for (const row of rows) lines.push(cols.map((c) => esc(row[c])).join(','));
   return lines.join('\n');
 }

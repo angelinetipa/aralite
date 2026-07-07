@@ -5,9 +5,10 @@ Source: DepEd LIS, SY 2023-2024 (as of Jan 31, 2024)
 |---|---|
 | Rows in / out | 60167 / 60167 (no rows dropped) |
 | Enrollment cells in / out | 3489686 / 3489686 (all preserved) |
-| Mojibake cells repaired | 15 (e.g. SABAÃ‘GAN -> Sabañgan) |
-| Nulls filled (Street Address) | 1682 -> "Not Provided" |
-| Nulls filled (Barangay) | 70 -> "Not Provided" |
+| Mojibake cells repaired | 15 |
+| Leading junk characters stripped | 6211 |
+| Invalid/placeholder values labeled | 5212 -> "Not Provided" |
+| School names standardized (new column) | 21942 (originals kept) |
 | Duplicate school IDs | 0 |
 | Negative enrollments | 0 |
 | Total enrollment (sum) | 27,081,292 |
