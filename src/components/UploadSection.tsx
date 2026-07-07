@@ -39,8 +39,10 @@ type State =
 
 export default function UploadSection({
   onDataLoaded,
+  liveLabel = 'Load into dashboard',
 }: {
   onDataLoaded: (name: string) => void;
+  liveLabel?: string;
 }) {
   const [state, setState] = useState<State>({ step: 'idle' });
   const [loading, setLoading] = useState(false);
@@ -210,7 +212,7 @@ export default function UploadSection({
                   boxShadow: '0 6px 14px rgba(206,17,38,0.3)',
                 }}
               >
-                {loading ? 'Loading…' : 'Load into dashboard'}
+                {loading ? 'Loading…' : liveLabel}
               </button>
             )}
 
