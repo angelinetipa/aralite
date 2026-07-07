@@ -10,6 +10,7 @@ import { getDB } from './lib/db';
 import { colors } from './constants/theme';
 import Spinner from './components/Spinner';
 import StatCards from './components/StatCards';
+import InsightsSection from './components/InsightsSection';
 import DropoffSection from './components/DropoffSection';
 import GenderSection from './components/GenderSection';
 import StrandsSection from './components/StrandsSection';
@@ -127,6 +128,7 @@ export default function App() {
       {/* Sections keyed by dataVersion so they re-query on data change */}
       <div key={dataVersion} style={{ display: ready ? 'block' : 'none' }}>
         <StatCards region={region} />
+        <InsightsSection region={region} />
         <DropoffSection region={region} />
         <GenderSection region={region} />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', columnGap: 20 }}>
