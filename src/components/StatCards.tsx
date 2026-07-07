@@ -2,6 +2,7 @@
 // Four headline numbers with the clay look. One query call fills all.
 
 import { useEffect, useState } from 'react';
+import { type Filters } from '../lib/filters';
 import { getHeadline, type Headline } from '../lib/queries';
 import { colors, clay } from '../constants/theme';
 
@@ -19,19 +20,19 @@ function StatCard({ label, value, accent }: { label: string; value: string; acce
   );
 }
 
-export default function StatCards({ region }: { region: string | null }) {
+export default function StatCards({ filters }: { filters: Filters }) {
   const [h, setH] = useState<Headline | null>(null);
 
   useEffect(() => {
-    getHeadline(region).then(setH).catch(() => setH(null));
-  }, [region]);
+    getHeadline(filters).then(setH).catch(() => setH(null));
+  }, [filters]);
 
   if (!h) return null;
 
   return (
     <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
       <StatCard
-        label={region ? `Learners · ${region}` : 'Total learners'}
+        label={'Total learners'}
         value={h.total.toLocaleString()}
         accent={colors.blue}
       />

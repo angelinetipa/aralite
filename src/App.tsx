@@ -1,14 +1,15 @@
 // src/App.tsx
-// One-page dashboard shell: header, optional "using your data" banner,
-// region filter, then every section stacked. One region state drives
-// all charts. `dataVersion` bumps whenever the data source changes
-// (upload or reset) — bumping it remounts the sections so they re-query.
+// One-page dashboard shell. The FilterBar (5 location levels) drives
+// every chart and insight. `dataVersion` bumps when the data source
+// changes (upload/reset), remounting sections so they re-query.
 
 import { useEffect, useState } from 'react';
-import { getRegions, resetToDefault } from './lib/queries';
 import { getDB } from './lib/db';
+import { resetToDefault } from './lib/queries';
+import { type Filters, scopeLabel } from './lib/filters';
 import { colors } from './constants/theme';
 import Spinner from './components/Spinner';
+import FilterBar from './components/FilterBar';
 import StatCards from './components/StatCards';
 import InsightsSection from './components/InsightsSection';
 import DropoffSection from './components/DropoffSection';
@@ -16,42 +17,36 @@ import GenderSection from './components/GenderSection';
 import StrandsSection from './components/StrandsSection';
 import SectorSection from './components/SectorSection';
 import RegionsSection from './components/RegionsSection';
-import UploadSection from './components/UploadSection';
 import FinderSection from './components/FinderSection';
+import UploadSection from './components/UploadSection';
 
 export default function App() {
-  const [region, setRegion] = useState<string | null>(null);
-  const [regions, setRegions] = useState<string[]>([]);
+  const [filters, setFilters] = useState<Filters>({});
   const [dataVersion, setDataVersion] = useState(0);
-  const [source, setSource] = useState<string | null>(null); // uploaded file name
+  const [source, setSource] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
-  // Warm up DuckDB + load region list once, THEN reveal the dashboard.
-  // This way the whole page appears together instead of six sections
-  // each flashing their own loading text.
+  // Warm up DuckDB once, then reveal the whole dashboard together.
   useEffect(() => {
     setReady(false);
-    getDB()
-      .then(() => getRegions())
-      .then((r) => { setRegions(r); setReady(true); })
-      .catch(() => { setRegions([]); setReady(true); });
+    getDB().then(() => setReady(true)).catch(() => setReady(true));
   }, [dataVersion]);
 
   function handleDataLoaded(name: string) {
     setSource(name);
-    setRegion(null);
-    setDataVersion((v) => v + 1); // remounts sections -> re-query new data
+    setFilters({});
+    setDataVersion((v) => v + 1);
   }
 
   async function handleReset() {
     await resetToDefault();
     setSource(null);
-    setRegion(null);
+    setFilters({});
     setDataVersion((v) => v + 1);
   }
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '2.5rem 1.5rem', color: colors.ink }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2.5rem 2rem', color: colors.ink }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -70,7 +65,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Banner shown only when viewing an uploaded dataset */}
+      {/* Uploaded-data banner */}
       {source && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
@@ -92,69 +87,42 @@ export default function App() {
         </div>
       )}
 
-      {/* Region filter */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '1.6rem 0' }}>
-        <label style={{ fontSize: 14, color: colors.inkSoft }}>Region</label>
-        <select
-          value={region ?? ''}
-          onChange={(e) => setRegion(e.target.value || null)}
-          style={{
-            padding: '9px 14px', borderRadius: 12, fontSize: 14,
-            border: '1px solid rgba(0,0,0,0.08)', background: colors.surface,
-            boxShadow: '0 3px 8px rgba(31,29,26,0.06)',
-          }}
-        >
-          <option value="">All regions (nationwide)</option>
-          {regions.map((r) => (
-            <option key={r} value={r}>{r}</option>
-          ))}
-        </select>
-        {region && (
-          <button
-            onClick={() => setRegion(null)}
-            style={{
-              padding: '9px 14px', borderRadius: 12, cursor: 'pointer', fontSize: 14,
-              border: '1px solid rgba(0,0,0,0.08)', background: colors.surface,
-              boxShadow: '0 3px 8px rgba(31,29,26,0.06)',
-            }}
-          >
-            Clear
-          </button>
-        )}
-      </div>
-
-      {/* One spinner while DuckDB warms up; then all sections at once */}
       {!ready && <Spinner />}
 
-      {/* Sections keyed by dataVersion so they re-query on data change */}
-      <div key={dataVersion} style={{ display: ready ? 'block' : 'none' }}>
-        <StatCards region={region} />
+      <div key={dataVersion} style={{ display: ready ? 'block' : 'none', marginTop: '1.5rem' }}>
 
-        {/* Two columns on desktop: findings (sticky) left, charts right.
-            Stacks to one column on narrow screens via CSS grid auto-fit. */}
+        {/* Main control: location filters drive everything below */}
+        <FilterBar filters={filters} onChange={setFilters} />
+
+        {/* Scope note */}
+        <p style={{ fontSize: 14, color: colors.inkSoft, margin: '0 0 20px' }}>
+          Showing data for <strong style={{ color: colors.ink }}>{scopeLabel(filters)}</strong>
+        </p>
+
+        <StatCards filters={filters} />
+
+        {/* Findings (sticky) left, charts right */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(260px, 340px) 1fr',
-          gap: 24,
-          alignItems: 'start',
-        }}
-        className="aralite-cols">
-          {/* Sticky = stays on screen while the charts scroll past */}
+          display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) 1fr',
+          gap: 24, alignItems: 'start',
+        }} className="aralite-cols">
           <div style={{ position: 'sticky', top: 16 }}>
-            <InsightsSection region={region} />
+            <InsightsSection filters={filters} />
           </div>
-
           <div>
-            <DropoffSection region={region} />
-            <GenderSection region={region} />
-            <StrandsSection region={region} />
-            <SectorSection region={region} />
-            <RegionsSection region={region} onPick={(r) => setRegion(r)} />
+            <DropoffSection filters={filters} />
+            <GenderSection filters={filters} />
+            <StrandsSection filters={filters} />
+            <SectorSection filters={filters} />
+            <RegionsSection
+              filters={filters}
+              onPick={(r) => setFilters({ region: r })}
+            />
           </div>
         </div>
-      </div>
 
-      <FinderSection />
+        <FinderSection />
+      </div>
 
       <UploadSection onDataLoaded={handleDataLoaded} />
 

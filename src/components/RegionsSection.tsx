@@ -7,13 +7,14 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import { getTopRegions, type RegionRow } from '../lib/queries';
+import { type Filters } from '../lib/filters';
 import { colors } from '../constants/theme';
 import { Card, ErrorState } from './ui';
 
 export default function RegionsSection({
-  region, onPick,
+  filters, onPick,
 }: {
-  region: string | null;
+  filters: Filters;
   onPick: (r: string) => void;
 }) {
   const [data, setData] = useState<RegionRow[]>([]);
@@ -57,7 +58,7 @@ export default function RegionsSection({
               style={{ cursor: 'pointer' }}
             >
               {data.map((row, i) => (
-                <Cell key={i} fill={row.region === region ? colors.red : colors.blue} />
+                <Cell key={i} fill={row.region === filters.region ? colors.red : colors.blue} />
               ))}
             </Bar>
           </BarChart>

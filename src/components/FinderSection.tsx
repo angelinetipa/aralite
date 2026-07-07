@@ -4,17 +4,17 @@
 // This is what makes Aralite a TOOL people use, not just a dashboard.
 
 import { useEffect, useState } from 'react';
-import {
-  getFilterOptions, searchSchools, getSchoolProfile,
-  type SchoolFilters, type SchoolHit, type SchoolProfile,
+import { searchSchools, getSchoolProfile, getLevelOptions,
+  type SchoolHit, type SchoolProfile,
 } from '../lib/queries';
+import { type Filters, LEVELS, type Level } from '../lib/filters';
 import { colors, clay } from '../constants/theme';
 import { Card } from './ui';
 
-const LOCATIONS = ['Region', 'Province', 'Division', 'Municipality', 'Barangay'] as const;
+const LABEL: Record<Level, string> = { region:'Region', province:'Province', division:'Division', municipality:'Municipality', barangay:'Barangay' };
 
 export default function FinderSection() {
-  const [filters, setFilters] = useState<SchoolFilters>({});
+  const [filters, setFilters] = useState<Filters>({});
   const [search, setSearch] = useState('');
   const [options, setOptions] = useState<Record<string, string[]>>({});
   const [hits, setHits] = useState<SchoolHit[]>([]);
@@ -22,9 +22,9 @@ export default function FinderSection() {
 
   // Load each dropdown's options, narrowed by the filters above it.
   useEffect(() => {
-    LOCATIONS.forEach((col) => {
-      getFilterOptions(col, filters)
-        .then((opts) => setOptions((o) => ({ ...o, [col]: opts })))
+    LEVELS.forEach((lvl) => {
+      getLevelOptions(lvl, filters)
+        .then((opts) => setOptions((o) => ({ ...o, [lvl]: opts })))
         .catch(() => {});
     });
   }, [filters]);
@@ -36,12 +36,10 @@ export default function FinderSection() {
     searchSchools(filters, search).then(setHits).catch(() => setHits([]));
   }, [filters, search]);
 
-  function setFilter(col: string, value: string) {
-    const key = col.toLowerCase() as keyof SchoolFilters;
-    // Changing a higher-level filter clears the ones below it.
-    const idx = LOCATIONS.indexOf(col as typeof LOCATIONS[number]);
-    const next: SchoolFilters = { ...filters, [key]: value || undefined };
-    LOCATIONS.slice(idx + 1).forEach((c) => { delete next[c.toLowerCase() as keyof SchoolFilters]; });
+  function setFilter(lvl: Level, value: string) {
+    const idx = LEVELS.indexOf(lvl);
+    const next: Filters = { ...filters, [lvl]: value || undefined };
+    LEVELS.slice(idx + 1).forEach((l) => { delete next[l]; });
     setFilters(next);
   }
 
@@ -70,22 +68,19 @@ export default function FinderSection() {
         gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
         gap: 10, marginBottom: 16,
       }}>
-        {LOCATIONS.map((col) => {
-          const key = col.toLowerCase() as keyof SchoolFilters;
-          return (
+        {LEVELS.map((lvl) => (
             <select
-              key={col}
-              value={(filters[key] as string) ?? ''}
-              onChange={(e) => setFilter(col, e.target.value)}
+              key={lvl}
+              value={filters[lvl] ?? ''}
+              onChange={(e) => setFilter(lvl, e.target.value)}
               style={inputStyle}
             >
-              <option value="">{col} (all)</option>
-              {(options[col] ?? []).map((o) => (
+              <option value="">{LABEL[lvl]} (all)</option>
+              {(options[lvl] ?? []).map((o) => (
                 <option key={o} value={o}>{o}</option>
               ))}
             </select>
-          );
-        })}
+        ))}
       </div>
 
       {/* Results */}

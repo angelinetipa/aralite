@@ -8,19 +8,20 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { getByGrade, type GradeRow } from '../lib/queries';
+import { type Filters } from '../lib/filters';
 import { colors } from '../constants/theme';
 import { Card, ErrorState } from './ui';
 
-export default function DropoffSection({ region }: { region: string | null }) {
+export default function DropoffSection({ filters }: { filters: Filters }) {
   const [data, setData] = useState<GradeRow[]>([]);
   const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading');
 
   useEffect(() => {
     setStatus('loading');
-    getByGrade(region)
+    getByGrade(filters)
       .then((rows) => { setData(rows); setStatus('ready'); })
       .catch(() => setStatus('error'));
-  }, [region]);
+  }, [filters]);
 
   if (status === 'loading') return null; // App spinner covers this
   if (status === 'error') return <ErrorState />;

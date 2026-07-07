@@ -6,19 +6,20 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import { getByStrand, type StrandRow } from '../lib/queries';
+import { type Filters } from '../lib/filters';
 import { colors } from '../constants/theme';
 import { Card, ErrorState } from './ui';
 
-export default function StrandsSection({ region }: { region: string | null }) {
+export default function StrandsSection({ filters }: { filters: Filters }) {
   const [data, setData] = useState<StrandRow[]>([]);
   const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading');
 
   useEffect(() => {
     setStatus('loading');
-    getByStrand(region)
+    getByStrand(filters)
       .then((rows) => { setData(rows); setStatus('ready'); })
       .catch(() => setStatus('error'));
-  }, [region]);
+  }, [filters]);
 
   if (status === 'loading') return null; // App spinner covers this
   if (status === 'error') return <ErrorState />;

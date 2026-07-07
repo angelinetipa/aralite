@@ -4,6 +4,8 @@
 // tells DepEd staff what matters before they read a single chart.
 
 import { useEffect, useState } from 'react';
+import { type Filters } from '../lib/filters';
+import { scopeLabel } from '../lib/filters';
 import { getInsights, type Insight } from '../lib/insights';
 import { colors, clay } from '../constants/theme';
 
@@ -14,16 +16,16 @@ const TONE = {
   good: { color: colors.yellow, label: 'Highlight' },
 } as const;
 
-export default function InsightsSection({ region }: { region: string | null }) {
+export default function InsightsSection({ filters }: { filters: Filters }) {
   const [items, setItems] = useState<Insight[]>([]);
   const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading');
 
   useEffect(() => {
     setStatus('loading');
-    getInsights(region)
+    getInsights(filters)
       .then((r) => { setItems(r); setStatus('ready'); })
       .catch(() => setStatus('error'));
-  }, [region]);
+  }, [filters]);
 
   if (status !== 'ready' || items.length === 0) return null;
 
@@ -32,7 +34,7 @@ export default function InsightsSection({ region }: { region: string | null }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Key findings</h2>
         <span style={{ fontSize: 13, color: colors.inkSoft }}>
-          {region ? `for ${region}` : 'nationwide'} · auto-calculated from the data
+          for {scopeLabel(filters)} · auto-calculated
         </span>
       </div>
 
