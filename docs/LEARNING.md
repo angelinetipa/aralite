@@ -1,154 +1,166 @@
 # Aralite — How It Works (Learning & Interview Prep)
 
-A plain-language guide to everything in this project. Written for a fresh grad: if you built parts with AI help and don't fully understand them yet, start here. README tells you *how to run* Aralite; this tells you *how it works*.
+Plain-language guide to everything in this project. Written for a fresh grad: if AI helped build parts you don't fully understand yet, start here. README tells you *how to run* Aralite; this tells you *how it works*.
 
 ---
 
 ## 1. Big picture
 
-Aralite is a website that shows Philippine school enrollment data as charts. You give it a messy government Excel file with 60,000 schools; it cleans that file, stores it in a fast format, and draws a dashboard anyone can explore. The clever part: the "database" that answers the chart questions runs *inside the web browser* — there's no server and no monthly database cost.
+Aralite is a website that shows Philippine school enrollment data as charts. You give it a messy government Excel file (60,000 schools); it cleans that file, stores it in a fast format, and draws a dashboard anyone can explore — filtering from region down to a single barangay, reading auto-generated insights, or asking questions in plain English. The clever part: the "database" answering the chart questions runs *inside the browser*. No server, no monthly database cost.
 
 ---
 
 ## 2. The tools we used (and why)
 
-**React** — a library for building website screens out of small reusable pieces called *components*. We chose it because it's the industry standard and lets us split the dashboard into clean parts (each chart is its own component).
+**React** — builds the screen from small reusable pieces called *components*. Industry standard.
 
-**TypeScript** — JavaScript with type-checking. It catches mistakes *before* you run the code (like passing text where a number belongs). Chosen because it prevents whole classes of bugs and is expected in most jobs.
+**TypeScript** — JavaScript with type-checking; catches mistakes before you run the code.
 
-**Vite** — the tool that runs the app while you develop and bundles it for the web. Chosen because it's very fast and the modern default.
+**Vite** — runs the app in development and bundles it for the web. Very fast.
 
-**Recharts** — a React charting library. It turns arrays of numbers into line and bar charts. Chosen because it's simple and looks clean.
+**React Router** — gives the app two pages with real URLs: `/` (dashboard) and `/admin` (data management).
 
-**DuckDB-WASM** — this is the star. DuckDB is a real SQL database built for analytics. *WASM* means it's compiled to run inside a browser. So the browser itself can run SQL queries over millions of rows — no server needed. Chosen because it removes server costs and limits, keeps uploaded data private, and shows a modern data-engineering skill.
+**Recharts** — turns arrays of numbers into charts.
 
-**Parquet** — a file format for tables that is compressed and *columnar* (stores each column together). It's much smaller and faster to read than Excel or CSV. Our 30MB Excel becomes a few MB. Chosen because it's the standard hand-off format in data work.
+**DuckDB-WASM** — the star. DuckDB is a real SQL analytics database; *WASM* means it runs inside the browser. So the browser runs SQL over millions of rows — no server. Removes cost/limits and keeps uploaded data private.
 
-**Python + pandas** — pandas is the go-to Python tool for cleaning and reshaping tables. We use it once, up front, to clean the raw DepEd file and export Parquet. Chosen because cleaning is easier and clearer in pandas than in the browser.
+**Parquet** — a compressed, columnar table format. Smaller and faster than Excel/CSV. Our 30MB Excel becomes a few MB.
 
-**Vercel** — free hosting for websites. It rebuilds and redeploys automatically when you push to GitHub. Chosen because it's free, fast, and made for this kind of app.
+**Python + pandas** — used once, up front, to clean the raw file and export Parquet. Cleaning is clearer in pandas.
+
+**Groq / Gemini (BYOK)** — optional AI for the "Ask the data" feature. BYOK = bring your own key; the key stays in the browser.
+
+**Vitest** — the test runner. Reuses Vite, so little setup.
+
+**GitHub Actions** — runs checks automatically on every push (CI).
+
+**Vercel** — free hosting; redeploys automatically when you push.
 
 ---
 
 ## 3. How the pieces connect
 
-There are two "lanes." One happens once (cleaning). The other happens every time someone opens the site (dashboard).
+Two "lanes." One runs once (cleaning). The other runs every visit (dashboard).
 
 ```
-CLEANING LANE (run once, on your computer)
-  raw.xlsx  ──►  pipeline/clean.py (pandas)  ──►  schools.parquet
-                                              └─►  enrollment.parquet
+CLEANING LANE (once, on your computer)
+  raw.xlsx ──► pipeline/clean.py (pandas) ──► schools.parquet
+                                          └─► enrollment.parquet
 
-DASHBOARD LANE (in the browser, every visit)
-  Parquet files ──► DuckDB-WASM ──► SQL queries ──► React components ──► charts
+DASHBOARD LANE (in the browser)
+  Parquet ──► DuckDB-WASM ──► SQL queries ──► React components ──► charts
 ```
 
-Rule we follow: **the UI never touches the database directly.** A chart calls a function in `queries.ts`, that function runs SQL through `db.ts`, and only `db.ts` talks to DuckDB. Each layer only knows the one below it. This keeps the code tidy and easy to change.
+Rule we follow: **the UI never touches the database directly.**
 
 ```
-Component (chart)  →  queries.ts (SQL)  →  db.ts (DuckDB)  →  data
+Component (chart) → queries.ts (SQL) → db.ts (DuckDB) → data
 ```
+
+Each layer only knows the one below it. Keeps code tidy and easy to change.
 
 ---
 
 ## 4. Folder structure — what lives where
 
 ```
-pipeline/clean.py     The one-time Python cleaner. Fixes text, reshapes, exports Parquet.
-data/                 Raw Excel + cleaned Parquet (the "master" copies).
-public/data/          The Parquet files the browser is actually served.
-src/App.tsx           The page shell: header, region filter, and layout of sections.
-src/components/        One file per dashboard section + shared UI (Card, Spinner).
+pipeline/clean.py     One-time Python cleaner. Fixes text, reshapes, exports Parquet.
+data/                 Raw Excel + cleaned Parquet.
+public/data/          Parquet files served to the browser.
+src/App.tsx           Router: sends you to the dashboard or admin page.
+src/pages/            DashboardPage (view-only) + AdminPage (data management).
+src/components/        Charts, stat cards, filter bar, upload, ask — one file each.
 src/lib/db.ts         Boots DuckDB, loads Parquet, reshapes uploaded files.
 src/lib/queries.ts    Every SQL query. Nothing else writes SQL.
-src/lib/cleaning.ts   The browser cleaning rules (for user uploads).
-src/constants/theme.ts  Colors and style tokens in one place.
-docs/LEARNING.md      This file.
+src/lib/insights.ts   Turns numbers into plain-language findings.
+src/lib/cleaning.ts   Browser cleaning rules (has tests next to it).
+src/lib/ai.ts         Plain English → SQL, with a read-only safety gate.
+src/lib/filters.ts    Shared location-filter logic used everywhere.
+src/constants/theme.ts  Colors and style tokens.
 ```
-
-Why separate files? So each piece is easy to find, understand, and fix — and so it reads like professional code, not one giant file.
 
 ---
 
 ## 5. Key concepts you'll be asked about
 
-**Component** — a reusable piece of UI. `DropoffSection` is a component that draws one chart.
+**Component** — a reusable piece of UI.
 
-**State** — data a component remembers that can change over time (React's `useState`). Example: which region is selected. When state changes, the screen updates automatically.
+**State** — data a component remembers that can change (React's `useState`). When it changes, the screen updates.
 
-**Props** — values passed *into* a component from its parent. We pass the chosen `region` down to each chart as a prop.
+**Props** — values passed *into* a component from its parent (we pass `filters` down to every chart).
 
-**Hook** — a React function starting with `use` (like `useState`, `useEffect`) that adds behavior to a component. `useEffect` runs code when the component loads or when something changes.
+**Hook** — a `use...` function adding behavior. `useEffect` runs code when the component loads or when something changes.
 
-**SQL** — the language for asking questions of a database. Example: `SELECT grade, SUM(enrollment) FROM enrollment GROUP BY grade` = "total learners per grade."
+**SQL** — the language for asking questions of a database.
 
-**Wide vs long data** — *Wide*: one row per school with 58 enrollment columns. *Long*: one row per school-grade-gender combination. Charts and SQL prefer long. Turning wide into long is called *reshaping* (or "melting").
+**Wide vs long data** — *Wide*: one row per school with 58 enrollment columns. *Long*: one row per school-grade-gender. Charts/SQL prefer long. Turning wide into long is *reshaping* (melting).
 
-**Aggregation** — combining many rows into a summary, like a sum or count per group. Most charts are aggregations.
+**Aggregation** — summarizing many rows into totals/counts per group. Most charts are aggregations.
 
-**Columnar format (Parquet)** — stores data by column instead of by row, which makes "sum this one column across millions of rows" very fast.
+**Columnar format (Parquet)** — stores data by column, making "sum this column over millions of rows" fast.
+
+**Client-side routing** — React Router changes the page without reloading. A `vercel.json` rewrite makes refreshes work on the live site.
 
 ---
 
 ## 6. Error handling
 
-Error handling means planning for things that can go wrong so the app doesn't crash or freeze. Every data call in Aralite can be in one of four states: **loading, empty, error, or normal**. Each chart handles all four — it shows nothing while loading (a single spinner covers the page), an error message if the query fails, and the chart when data arrives. Uploads are wrapped in `try/catch` so a bad file shows a friendly message instead of breaking the page. This matters because real users upload weird files and networks fail; good apps expect that.
+Planning for things that go wrong so the app doesn't crash. Every data call has four states: **loading, empty, error, normal** — each chart handles all four (a single spinner covers loading; an error message if a query fails). Uploads and AI calls are wrapped in `try/catch` so a bad file or wrong key shows a friendly message instead of breaking the page.
 
 ---
 
 ## 7. Testing
 
-**Why test:** to prove the code works and to catch breakage when you change things later.
+**Why:** prove the code works and catch breakage when you change things.
 
-**Unit tests** — check one small piece in isolation (e.g. "does the cleaning function fix a broken character?").
+**Unit tests** — check one small piece in isolation. We test `cleaning.ts` (pure functions — easy and high-value): mojibake repair, junk stripping, invalid-value labeling, name standardization, zero-data-loss, CSV quoting.
 
-**Mocking** — replacing a real dependency with a fake one during a test. Example: instead of running a real database, you feed the function fake rows. This makes tests fast and focused on *your* logic, not the database.
+**Run:** `npm test` (Vitest). Tests live next to the code as `*.test.ts`.
 
-For Aralite, the highest-value tests are on `cleaning.ts` (pure functions — easy to test) and the column-parsing logic that splits `"G11 ACAD STEM Male"` into grade/strand/gender.
+**Mocking** — replacing a real dependency with a fake during a test. Our cleaning tests need no mocks because the functions are pure (input in, output out).
 
 ---
 
 ## 8. CI/CD
 
-**CI (Continuous Integration)** — a robot that automatically checks your code every time you push to GitHub. Ours runs lint (style check) and the build (type-check). If something's broken, you find out immediately, not after deploying.
+**CI (Continuous Integration)** — a robot (GitHub Actions) checks your code on every push: lint → build (type-check) → test. If anything fails, the commit goes red so you catch it early. Config: `.github/workflows/ci.yml`.
 
-**CD (Continuous Deployment)** — automatic publishing. Vercel watches the `main` branch; every push rebuilds and redeploys the live site. You never upload files by hand.
-
-Together: push code → CI checks it → Vercel deploys it. Fast and safe.
+**CD (Continuous Deployment)** — Vercel watches `main` and redeploys automatically. Push → CI checks → Vercel deploys.
 
 ---
 
 ## 9. Git basics
 
-**Git** tracks every change to your code so you can undo, compare, and collaborate.
+- `git add .` — stage changes
+- `git commit -m "message"` — save a snapshot
+- `git push` — upload to GitHub
 
-- `git add .` — stage your changes (mark them to save)
-- `git commit -m "message"` — save a snapshot with a description
-- `git push` — upload snapshots to GitHub
+**Message style:** `type(scope): description` (e.g. `feat(admin): add data management page`). Types: `feat`, `fix`, `docs`, `test`, `chore`, `style`.
 
-**Commit message style** we use: `type(scope): description`, e.g. `feat(dashboard): add region filter`. Types: `feat` (new feature), `fix` (bug fix), `docs` (documentation), `style` (formatting).
-
-**One repo per project** — Aralite is its own repository, separate from other projects.
+**One repo per project.**
 
 ---
 
 ## 10. Security basics
 
-- **Environment variables (`.env`)** — a file for secret values (API keys, passwords) that you never commit to GitHub. Aralite currently needs none, but the pattern matters: secrets go in `.env`, and `.env` is listed in `.gitignore` so Git ignores it.
-- **Why it matters** — committing a secret to a public repo means anyone can steal it.
-- **Privacy by design** — because DuckDB runs in the browser, uploaded files never travel to a server. That's a security win: there's no server to leak them.
+- **Environment variables (`.env`)** — file for secrets, never committed (listed in `.gitignore`).
+- **BYOK** — the AI feature uses *your* API key, kept in the browser and never stored or sent to a server.
+- **Read-only AI SQL** — generated SQL is checked to be a plain SELECT; anything that could change data (DELETE, DROP…) is blocked before running.
+- **Privacy by design** — DuckDB runs in the browser, so uploaded files never travel to a server.
 
 ---
 
 ## 11. "Tell me about this project" — interview answer
 
-> Aralite is a data dashboard for Philippine school enrollment. I took the Department of Education's raw file — about 60,000 schools and 27 million learners — and built a pipeline in Python and pandas to clean it: fixing character-encoding problems, standardizing text, and handling missing values without deleting any data. I exported it to Parquet, a compressed columnar format.
+> Aralite is a data dashboard for Philippine school enrollment — about 60,000 schools and 27 million learners. I built a Python/pandas pipeline to clean the raw DepEd file: fixing character-encoding problems, stripping junk characters, labeling invalid placeholder values, and standardizing school names and addresses into new columns without deleting any data. I exported to Parquet, a compressed columnar format.
 >
-> The dashboard is React and TypeScript, but the interesting choice is the data engine: I used DuckDB-WASM, which runs a real SQL database inside the browser. That means the whole app is serverless — no database to pay for or maintain — and when users upload their own dataset, their file never leaves their computer, so it's private by default. DuckDB reshapes their upload from wide to long format using SQL, so millions of rows are processed in the browser without crashing it.
+> The app is React and TypeScript, but the key choice is the data engine: DuckDB-WASM, which runs a real SQL database inside the browser. That makes it serverless — nothing to pay for or maintain — and when users upload their own dataset, their file never leaves their computer, so it's private by default. DuckDB reshapes uploads from wide to long format using SQL, so millions of rows process in the browser without crashing it.
 >
-> I kept the architecture layered — components call a query layer, which calls the database layer, and only that layer touches DuckDB. It's deployed on Vercel with automatic deploys from GitHub. It started as a class activity, but I rebuilt it from scratch to actually learn the data-engineering side.
+> On top I added five-level location filters that drive the whole dashboard, auto-calculated insights, and an "ask the data" feature where a user's own AI key turns plain-English questions into read-only SQL. It's split into a public dashboard and an admin page using React Router, has unit tests with Vitest, and runs lint/build/test in GitHub Actions on every push. It's deployed on Vercel.
+>
+> It started as a class activity, but I rebuilt it from scratch to learn the data-engineering side properly.
 
-Honest notes to add if asked: it's a self-learning project; AI helped with parts I then studied (that's what this doc is for); the dataset is a real DepEd public file.
+Honest notes if asked: self-learning project; AI helped with parts I then studied (this doc is the proof); real public DepEd dataset; not affiliated with DepEd.
 
 ---
 
@@ -166,7 +178,8 @@ Honest notes to add if asked: it's a self-learning project; AI helped with parts
 | Wide/Long | Two shapes of table data; charts prefer long |
 | Reshaping (melt) | Turning wide data into long |
 | Aggregation | Summarizing rows into totals/counts per group |
-| pandas | Python library for cleaning/reshaping tables |
-| CI/CD | Robots that check and deploy your code |
+| BYOK | Bring your own (AI) key; stays in the browser |
+| Routing | Switching pages without reloading |
 | Mocking | Using a fake dependency in a test |
+| CI/CD | Robots that check and deploy your code |
 | `.env` | File holding secrets, never committed |
