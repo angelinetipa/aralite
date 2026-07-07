@@ -14,6 +14,7 @@ function StatCard({ label, value, accent }: { label: string; value: string; acce
       minWidth: 150,
       padding: '1.1rem 1.2rem',
       borderTop: `4px solid ${accent}`,
+      textAlign: 'center',
     }}>
       <div style={{ fontSize: 13, color: colors.inkSoft }}>{label}</div>
       <div style={{ fontSize: 23, fontWeight: 800, color: colors.ink, marginTop: 4, whiteSpace: 'nowrap' }}>{value}</div>
@@ -31,7 +32,7 @@ export default function StatCards({ filters }: { filters: Filters }) {
   if (!h) return null;
 
   return (
-    <div style={{ display: 'flex', gap: 14, marginBottom: 24, overflowX: 'auto' }}>
+    <div style={{ display: 'flex', gap: 14, marginBottom: 24, overflowX: 'auto', padding: '6px 2px 12px' }}>
       <StatCard
         label={'Total learners'}
         value={h.total.toLocaleString()}

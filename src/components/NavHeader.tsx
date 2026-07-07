@@ -25,24 +25,33 @@ export default function NavHeader() {
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <div style={{
-          width: 10, height: 40, borderRadius: 6,
-          background: `linear-gradient(180deg, ${colors.yellow}, #E8B90A)`,
-          boxShadow: '0 4px 10px rgba(252,209,22,0.45)',
-        }} />
-        <div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Aralite</h1>
-          <p style={{ color: colors.inkSoft, margin: 0, fontSize: 13 }}>
-            DepEd enrollment · SY 2023–2024
-          </p>
+    <div>
+      {/* Slim tricolor strip — evokes the Philippine flag / DepEd palette
+          without using any official logo or government IP. */}
+      <div style={{
+        height: 5, borderRadius: 4, marginBottom: 16,
+        background: `linear-gradient(90deg, ${colors.blue} 0 33%, ${colors.red} 33% 66%, ${colors.yellow} 66% 100%)`,
+      }} />
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{
+            width: 10, height: 40, borderRadius: 6,
+            background: `linear-gradient(180deg, ${colors.yellow}, #E8B90A)`,
+            boxShadow: '0 4px 10px rgba(252,209,22,0.45)',
+          }} />
+          <div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Aralite</h1>
+            <p style={{ color: colors.inkSoft, margin: 0, fontSize: 13 }}>
+              DepEd enrollment · SY 2023–2024
+            </p>
+          </div>
         </div>
+        <nav style={{ display: 'flex', gap: 6 }}>
+          {link('/', 'Dashboard')}
+          {link('/admin', 'Admin')}
+        </nav>
       </div>
-      <nav style={{ display: 'flex', gap: 6 }}>
-        {link('/', 'Dashboard')}
-        {link('/admin', 'Admin')}
-      </nav>
     </div>
   );
 }
