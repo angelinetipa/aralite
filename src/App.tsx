@@ -50,7 +50,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '2.5rem 1.5rem', color: colors.ink }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2.5rem 2rem', color: colors.ink }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -128,14 +128,29 @@ export default function App() {
       {/* Sections keyed by dataVersion so they re-query on data change */}
       <div key={dataVersion} style={{ display: ready ? 'block' : 'none' }}>
         <StatCards region={region} />
-        <InsightsSection region={region} />
-        <DropoffSection region={region} />
-        <GenderSection region={region} />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', columnGap: 20 }}>
-          <StrandsSection region={region} />
-          <SectorSection region={region} />
+
+        {/* Two columns on desktop: findings (sticky) left, charts right.
+            Stacks to one column on narrow screens via CSS grid auto-fit. */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(260px, 340px) 1fr',
+          gap: 24,
+          alignItems: 'start',
+        }}
+        className="aralite-cols">
+          {/* Sticky = stays on screen while the charts scroll past */}
+          <div style={{ position: 'sticky', top: 16 }}>
+            <InsightsSection region={region} />
+          </div>
+
+          <div>
+            <DropoffSection region={region} />
+            <GenderSection region={region} />
+            <StrandsSection region={region} />
+            <SectorSection region={region} />
+            <RegionsSection region={region} onPick={(r) => setRegion(r)} />
+          </div>
         </div>
-        <RegionsSection region={region} onPick={(r) => setRegion(r)} />
       </div>
 
       <UploadSection onDataLoaded={handleDataLoaded} />

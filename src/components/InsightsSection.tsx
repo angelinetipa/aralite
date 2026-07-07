@@ -38,7 +38,7 @@ export default function InsightsSection({ region }: { region: string | null }) {
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+        gridTemplateColumns: '1fr',
         gap: 14,
       }}>
         {items.map((it, i) => {
