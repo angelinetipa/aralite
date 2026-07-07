@@ -16,6 +16,8 @@ import GenderSection from '../components/GenderSection';
 import StrandsSection from '../components/StrandsSection';
 import SectorSection from '../components/SectorSection';
 import RegionsSection from '../components/RegionsSection';
+import StrandGenderSection from '../components/StrandGenderSection';
+import OfferingSection from '../components/OfferingSection';
 import AskSection from '../components/AskSection';
 
 export default function DashboardPage() {
@@ -52,7 +54,9 @@ export default function DashboardPage() {
             <DropoffSection filters={filters} />
             <GenderSection filters={filters} />
             <StrandsSection filters={filters} />
+            <StrandGenderSection filters={filters} />
             <SectorSection filters={filters} />
+            <OfferingSection filters={filters} />
             <RegionsSection filters={filters} onPick={(r) => setFilters({ region: r })} />
           </div>
         </div>

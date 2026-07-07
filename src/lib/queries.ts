@@ -20,10 +20,13 @@ function where(f: Filters, extra: string[] = []): string {
 
 // ---- headline numbers -------------------------------------------------
 
-export type Headline = { total: number; schools: number; shs: number; topRegion: string };
+export type Headline = {
+  total: number; schools: number; shs: number; topRegion: string;
+  publicPct: number; male: number; female: number; avgPerSchool: number;
+};
 
 export async function getHeadline(f: Filters): Promise<Headline> {
-  const [tot, sch, shs, top] = await Promise.all([
+  const [tot, sch, shs, top, sector, gender] = await Promise.all([
     query<{ v: bigint }>(`SELECT SUM(e.enrollment) v ${JOINED} ${where(f)}`),
     query<{ v: bigint }>(`SELECT COUNT(*) v FROM schools s ${where(f)}`),
     query<{ v: bigint }>(`SELECT SUM(e.enrollment) v ${JOINED} ${where(f, ["e.grade IN ('G11','G12')"])}`),
@@ -31,12 +34,25 @@ export async function getHeadline(f: Filters): Promise<Headline> {
       SELECT s.Region, SUM(e.enrollment) t ${JOINED} ${where(f)}
       GROUP BY s.Region ORDER BY t DESC LIMIT 1
     `),
+    query<{ sector: string; v: bigint }>(`
+      SELECT s.Sector sector, SUM(e.enrollment) v ${JOINED} ${where(f)} GROUP BY s.Sector
+    `),
+    query<{ gender: string; v: bigint }>(`
+      SELECT e.gender, SUM(e.enrollment) v ${JOINED} ${where(f)} GROUP BY e.gender
+    `),
   ]);
+  const total = Number(tot[0]?.v ?? 0);
+  const schools = Number(sch[0]?.v ?? 0);
+  const pub = Number(sector.find((r) => r.sector === 'Public')?.v ?? 0);
+  const male = Number(gender.find((r) => r.gender === 'Male')?.v ?? 0);
+  const female = Number(gender.find((r) => r.gender === 'Female')?.v ?? 0);
   return {
-    total: Number(tot[0]?.v ?? 0),
-    schools: Number(sch[0]?.v ?? 0),
+    total, schools,
     shs: Number(shs[0]?.v ?? 0),
     topRegion: top[0]?.Region ?? '—',
+    publicPct: total ? Math.round((pub / total) * 100) : 0,
+    male, female,
+    avgPerSchool: schools ? Math.round(total / schools) : 0,
   };
 }
 
@@ -171,3 +187,32 @@ export async function getSchoolProfile(id: string): Promise<SchoolProfile> {
 }
 
 export { resetToDefault } from './db';
+
+// Strand × gender — shows gender skew within each senior-high strand.
+export type StrandGenderRow = { strand: string; Male: number; Female: number };
+export async function getStrandByGender(f: Filters): Promise<StrandGenderRow[]> {
+  const rows = await query<{ strand: string; gender: string; total: bigint }>(`
+    SELECT e.strand, e.gender, SUM(e.enrollment) total ${JOINED}
+    ${where(f, ["e.grade IN ('G11','G12')", 'e.strand IS NOT NULL'])}
+    GROUP BY e.strand, e.gender
+  `);
+  const map = new Map<string, StrandGenderRow>();
+  for (const r of rows) {
+    const name = r.strand.replace('ACAD - ', '').replace('ACAD ', '');
+    const row = map.get(name) ?? { strand: name, Male: 0, Female: 0 };
+    if (r.gender === 'Male') row.Male = Number(r.total);
+    else row.Female = Number(r.total);
+    map.set(name, row);
+  }
+  return [...map.values()].sort((a, b) => (b.Male + b.Female) - (a.Male + a.Female));
+}
+
+// School offering (Modified COC) — what levels each school provides.
+export type OfferingRow = { offering: string; schools: number };
+export async function getByOffering(f: Filters): Promise<OfferingRow[]> {
+  const rows = await query<{ coc: string; n: bigint }>(`
+    SELECT "Modified COC" coc, COUNT(*) n FROM schools s ${where(f)}
+    GROUP BY "Modified COC" ORDER BY n DESC
+  `);
+  return rows.map((r) => ({ offering: r.coc, schools: Number(r.n) }));
+}
