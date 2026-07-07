@@ -135,6 +135,35 @@ df["School Name Clean"] = df["School Name"].map(expand_name)
 names_standardized = int((df["School Name Clean"] != df["School Name"]).sum())
 
 # ---------------------------------------------------------------
+# 6b. CLEAN STREET ADDRESS -> NEW COLUMN (future-ready, not used yet)
+# Addresses are hand-typed free text (e.g. "#37 Ganagan,Bacarra",
+# "-Brgy. 20", "RIZAL ST."). We can't perfectly structure them, but a
+# tidy copy is ready for maps/geocoding later. Original stays intact.
+# ---------------------------------------------------------------
+ADDR_FIX = [
+    (r"\bBrgy\.?", "Barangay"),
+    (r"\bSt\.(?=\s|$)", "Street"),
+]
+
+def clean_address(addr):
+    if not isinstance(addr, str):
+        return addr
+    a = addr
+    a = re.sub(r"^[\-\#\*\.\'\"\s]+", "", a)      # strip leading junk
+    a = re.sub(r",(\S)", r", \1", a)               # space after commas
+    for pat, repl in ADDR_FIX:
+        a = re.sub(pat, repl, a, flags=re.IGNORECASE)
+    a = re.sub(r"\s+", " ", a).strip()
+    if a.isupper():                                # tame ALL-CAPS entries
+        a = a.title()
+    if a.strip().upper() in INVALID or a == "":
+        return EMPTY_LABEL
+    return a
+
+df["Street Address Clean"] = df["Street Address"].map(clean_address)
+addr_cleaned = int((df["Street Address Clean"] != df["Street Address"].astype(str)).sum())
+
+# ---------------------------------------------------------------
 # 7. VALIDATE ENROLLMENT NUMBERS — assert, don't silently fix.
 # ---------------------------------------------------------------
 assert df["BEIS School ID"].is_unique, "Duplicate school IDs found!"
@@ -170,7 +199,7 @@ long = long.drop(columns=["col"])
 # ---------------------------------------------------------------
 # 9. EXPORT + QUALITY REPORT — proof, not "trust me".
 # ---------------------------------------------------------------
-schools = df[ID_COLS + ["School Name Clean", "Total Enrollment"]]
+schools = df[ID_COLS + ["School Name Clean", "Street Address Clean", "Total Enrollment"]]
 schools.to_parquet("data/schools.parquet", index=False)
 long.to_parquet("data/enrollment.parquet", index=False)
 
@@ -185,6 +214,7 @@ Source: DepEd LIS, SY 2023-2024 (as of Jan 31, 2024)
 | Leading junk characters stripped | {junk_before} |
 | Invalid/placeholder values labeled | {invalid_fixed} -> "{EMPTY_LABEL}" |
 | School names standardized (new column) | {names_standardized} (originals kept) |
+| Street addresses cleaned (new column) | {addr_cleaned} (originals kept) |
 | Duplicate school IDs | 0 |
 | Negative enrollments | 0 |
 | Total enrollment (sum) | {int(df['Total Enrollment'].sum()):,} |

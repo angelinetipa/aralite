@@ -61,6 +61,21 @@ function expandName(name: string): string {
   return out.replace(/\s+/g, ' ').trim();
 }
 
+// RULE 4b — Clean Street Address into a NEW column (future-ready for
+// maps/geocoding). Free-text, so we only do safe tidying; original kept.
+function cleanAddress(addr: string): string {
+  let a = addr.replace(/^[-#*.'"\s]+/, '');   // strip leading junk
+  a = a.replace(/,(\S)/g, ', $1');             // space after commas
+  a = a.replace(/\bBrgy\.?/gi, 'Barangay');
+  a = a.replace(/\bSt\.(?=\s|$)/gi, 'Street');
+  a = a.replace(/\s+/g, ' ').trim();
+  if (a === a.toUpperCase() && /[A-Z]/.test(a)) {
+    a = a.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  }
+  if (INVALID.has(a.toUpperCase()) || a === '') return EMPTY_LABEL;
+  return a;
+}
+
 // Run all rules over a table (array of row objects from CSV/Excel).
 // Returns the cleaned table + a report — proof, never "trust me".
 export function cleanTable(
@@ -97,6 +112,10 @@ export function cleanTable(
       const clean = expandName(out['School Name'] as string);
       out['School Name Clean'] = clean;
       if (clean !== out['School Name']) namesStandardized++;
+    }
+    // RULE 4b — future-ready cleaned address column.
+    if (typeof out['Street Address'] === 'string') {
+      out['Street Address Clean'] = cleanAddress(out['Street Address'] as string);
     }
     return out;
   });
