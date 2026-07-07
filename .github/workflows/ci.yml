@@ -1,0 +1,23 @@
+# .github/workflows/ci.yml
+# Runs on every push + pull request: install, lint, type-check, test.
+# If anything fails, GitHub marks the commit red so you catch it early.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build   # tsc + vite build = type-check included
+      - run: npm test
