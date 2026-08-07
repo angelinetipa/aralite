@@ -16,12 +16,23 @@ export default function AdminPage() {
   // and coming back. useState alone forgot it every time.
   const [live, setLive] = useState<string | null>(() => getLiveDataset());
   const [confirming, setConfirming] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [error, setError] = useState('');
 
   async function removeLive() {
-    await resetToDefault();
-    setLiveDataset(null);
-    setLive(null);
-    setConfirming(false);
+    setRemoving(true);
+    setError('');
+    try {
+      await resetToDefault();
+      setLiveDataset(null);
+      setLive(null);
+      setConfirming(false);
+    } catch (e) {
+      // Without this the button just looked dead when something failed.
+      setError(e instanceof Error ? e.message : 'Could not restore the default dataset.');
+    } finally {
+      setRemoving(false);
+    }
   }
 
   function publish(name: string) {
@@ -98,12 +109,15 @@ export default function AdminPage() {
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={removeLive}
+                disabled={removing}
                 style={{
-                  padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 13,
-                  border: 'none', background: colors.red, color: '#fff', fontWeight: 600,
+                  padding: '8px 16px', borderRadius: 10, fontSize: 13,
+                  cursor: removing ? 'default' : 'pointer',
+                  border: 'none', background: removing ? colors.blueSoft : colors.red,
+                  color: '#fff', fontWeight: 600,
                 }}
               >
-                Yes, remove it
+                {removing ? 'Removing…' : 'Yes, remove it'}
               </button>
               <button
                 onClick={() => setConfirming(false)}
@@ -115,6 +129,9 @@ export default function AdminPage() {
                 Cancel
               </button>
             </div>
+            {error && (
+              <p style={{ margin: '10px 0 0', fontSize: 13, color: colors.red }}>{error}</p>
+            )}
           </div>
         )}
 

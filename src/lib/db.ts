@@ -88,13 +88,18 @@ export async function loadUploadedData(
         SELECT * FROM read_csv_auto('upload.csv', header=true, all_varchar=true);
     `);
 
-    // 3. schools view = every uploaded column, PLUS a calculated
+    // 3. schools = every uploaded column, PLUS a calculated
     //    "Total Enrollment".
     //    The raw DepEd file does not ship that column — clean.py adds it
     //    by summing the grade columns. We must do the same here, or every
     //    chart that asks for it fails and renders nothing.
     //    Everything arrives as text (all_varchar), so each value is cast
     //    before adding; anything unparseable counts as 0.
+    //
+    //    This is stored as a TABLE, not a view. A view would redo the
+    //    58-column sum over 60,000 rows on EVERY chart query, which locks
+    //    up the browser. Calculating once here costs a moment now and
+    //    makes every later query fast.
     const totalExpr =
       enrollmentCols.length > 0
         ? enrollmentCols.map((c) => `COALESCE(TRY_CAST(${q(c)} AS BIGINT), 0)`).join(' + ')
@@ -111,19 +116,22 @@ export async function loadUploadedData(
       : `*`;
 
     await conn.query(`
-      CREATE OR REPLACE VIEW schools AS
+      CREATE OR REPLACE TABLE upload_schools AS
         SELECT ${keep}, (${totalExpr}) AS "Total Enrollment"
         FROM raw_upload;
     `);
+    await conn.query(`CREATE OR REPLACE VIEW schools AS SELECT * FROM upload_schools;`);
 
-    // 4. enrollment view = UNPIVOT the enrollment columns into long form,
+    // 4. enrollment = UNPIVOT the enrollment columns into long form,
     //    then parse each column name into grade / strand / gender —
     //    the same logic as the Python parser.
+    //    Also stored as a TABLE: the unpivot produces millions of rows,
+    //    and no chart should pay that cost more than once.
     const colList = enrollmentCols.map(q).join(', ');
     // strip the trailing " Male"/" Female" to get the "rest" once.
     const rest = `regexp_replace(col, ' (Male|Female)$', '')`;
     await conn.query(`
-      CREATE OR REPLACE VIEW enrollment AS
+      CREATE OR REPLACE TABLE upload_enrollment AS
       SELECT
         "BEIS School ID",
         TRY_CAST(value AS BIGINT) AS enrollment,          -- bad/empty -> NULL
@@ -144,6 +152,10 @@ export async function loadUploadedData(
       )
       WHERE TRY_CAST(value AS BIGINT) IS NOT NULL;             -- drop non-numeric rows
     `);
+    await conn.query(`CREATE OR REPLACE VIEW enrollment AS SELECT * FROM upload_enrollment;`);
+
+    // The wide source is no longer needed once both tables exist.
+    await conn.query(`DROP TABLE IF EXISTS raw_upload;`);
   } finally {
     await conn.close();
   }
@@ -161,6 +173,10 @@ export async function resetToDefault(): Promise<void> {
       CREATE OR REPLACE VIEW enrollment AS
         SELECT * FROM read_parquet('${base}/data/enrollment.parquet');
     `);
+    // Free the memory the upload was holding.
+    await conn.query(`DROP TABLE IF EXISTS upload_schools;`);
+    await conn.query(`DROP TABLE IF EXISTS upload_enrollment;`);
+    await conn.query(`DROP TABLE IF EXISTS raw_upload;`);
   } finally {
     await conn.close();
   }
