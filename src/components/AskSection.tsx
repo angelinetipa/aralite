@@ -31,6 +31,7 @@ export default function AskSection() {
   const [rows, setRows] = useState<Row[]>([]);
   const [status, setStatus] = useState<'idle' | 'thinking' | 'error' | 'done'>('idle');
   const [error, setError] = useState('');
+  const [showHelp, setShowHelp] = useState(false);
 
   async function ask(text?: string) {
     const asked = (text ?? question).trim();
@@ -93,6 +94,58 @@ export default function AskSection() {
           style={{ ...inputStyle, flex: 1, minWidth: 200 }}
         />
       </div>
+
+      {/* Where do I get a key? — most visitors have never made one. */}
+      <button
+        onClick={() => setShowHelp((v) => !v)}
+        style={{
+          padding: 0, border: 'none', background: 'none', cursor: 'pointer',
+          color: colors.blue, fontSize: 12.5, fontWeight: 600,
+          textDecoration: 'underline', marginBottom: 12,
+        }}
+      >
+        {showHelp ? 'Hide key help' : "Don't have a key? Here's how to get one"}
+      </button>
+
+      {showHelp && (
+        <div style={{
+          border: `1px solid ${colors.line}`, borderRadius: 12,
+          padding: '14px 16px', marginBottom: 14, background: '#FBFAF6',
+        }}>
+          <p style={{ fontSize: 13, lineHeight: 1.6, margin: '0 0 10px', color: colors.inkSoft }}>
+            <strong style={{ color: colors.ink }}>What the key is for.</strong> The rest of this
+            dashboard needs no key. This one box does, because turning your question into SQL
+            takes an AI model, and the model runs on someone else&rsquo;s computer. The key is how
+            that company knows the request came from you.
+          </p>
+          <p style={{ fontSize: 13, lineHeight: 1.6, margin: '0 0 10px', color: colors.inkSoft }}>
+            <strong style={{ color: colors.ink }}>Why yours and not mine.</strong> If Aralite
+            shipped with its own key, anyone could spend it. Using your own also means your
+            questions go straight from your browser to the provider &mdash; they never pass
+            through any server of mine, because there isn&rsquo;t one.
+          </p>
+          <p style={{ fontSize: 13, lineHeight: 1.6, margin: '0 0 10px', color: colors.inkSoft }}>
+            Both options below have a free tier. Sign in, create a key, and paste it above.
+          </p>
+          <ul style={{ margin: '0 0 10px', paddingLeft: 18, fontSize: 13, color: colors.inkSoft }}>
+            <li style={{ marginBottom: 5, lineHeight: 1.6 }}>
+              <strong style={{ color: colors.ink }}>Groq</strong> &mdash; fastest, no card needed:{' '}
+              <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer"
+                 style={{ color: colors.blue }}>console.groq.com/keys</a>
+            </li>
+            <li style={{ lineHeight: 1.6 }}>
+              <strong style={{ color: colors.ink }}>Gemini</strong> &mdash; use a Google account:{' '}
+              <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer"
+                 style={{ color: colors.blue }}>aistudio.google.com/apikey</a>
+            </li>
+          </ul>
+          <p style={{ fontSize: 12.5, lineHeight: 1.6, margin: 0, color: colors.inkSoft }}>
+            The key lives only in this browser tab and disappears when you close it. Nothing is
+            saved. Treat it like a password anyway &mdash; and you can delete it from the provider
+            at any time.
+          </p>
+        </div>
+      )}
 
       {/* Question */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>

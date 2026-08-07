@@ -47,7 +47,6 @@ export default function IntroPanel() {
           color: colors.inkSoft,
           lineHeight: 1.6,
           margin: '10px 0 0',
-          maxWidth: 640,
         }}
       >
         Aralite turns the Department of Education&rsquo;s raw enrollment file into something
@@ -63,7 +62,6 @@ export default function IntroPanel() {
           color: colors.inkSoft,
           lineHeight: 1.6,
           margin: '10px 0 0',
-          maxWidth: 640,
         }}
       >
         It is built for the kind of person who has to decide where teachers, classrooms, and

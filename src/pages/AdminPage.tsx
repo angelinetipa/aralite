@@ -6,17 +6,27 @@
 
 import { useState } from 'react';
 import { resetToDefault } from '../lib/queries';
+import { getLiveDataset, setLiveDataset } from '../lib/liveDataset';
 import { colors, clay } from '../constants/theme';
 import NavHeader from '../components/NavHeader';
 import UploadSection from '../components/UploadSection';
 
 export default function AdminPage() {
-  const [live, setLive] = useState<string | null>(null);
+  // Seed from the shared module so the status survives leaving this page
+  // and coming back. useState alone forgot it every time.
+  const [live, setLive] = useState<string | null>(() => getLiveDataset());
   const [confirming, setConfirming] = useState(false);
 
   async function removeLive() {
     await resetToDefault();
+    setLiveDataset(null);
     setLive(null);
+    setConfirming(false);
+  }
+
+  function publish(name: string) {
+    setLiveDataset(name);
+    setLive(name);
     setConfirming(false);
   }
 
@@ -67,46 +77,53 @@ export default function AdminPage() {
             )}
           </div>
 
-          {/* Confirm step so removal never happens by accident */}
-          {confirming && (
-            <div style={{
-              marginTop: 14, padding: '12px 14px', borderRadius: 10,
-              background: '#FBE6E9', border: `1px solid ${colors.red}`,
-            }}>
-              <p style={{ margin: '0 0 10px', fontSize: 14, color: colors.ink }}>
-                Remove the custom dataset and restore the default DepEd data?
-                The dashboard will switch back immediately.
-              </p>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button
-                  onClick={removeLive}
-                  style={{
-                    padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 13,
-                    border: 'none', background: colors.red, color: '#fff', fontWeight: 600,
-                  }}
-                >
-                  Yes, remove it
-                </button>
-                <button
-                  onClick={() => setConfirming(false)}
-                  style={{
-                    padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 13,
-                    border: '1px solid rgba(0,0,0,0.15)', background: '#fff',
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
+          {usingCustom && (
+            <p style={{ fontSize: 12.5, color: colors.inkSoft, margin: '10px 0 0', lineHeight: 1.6 }}>
+              This dataset lives in your browser's memory only. Refreshing the page returns the
+              dashboard to the default DepEd data.
+            </p>
           )}
         </div>
+
+        {/* Confirm step so removal never happens by accident */}
+        {confirming && (
+          <div style={{
+            marginBottom: 20, padding: '12px 14px', borderRadius: 10,
+            background: '#FBE6E9', border: `1px solid ${colors.red}`,
+          }}>
+            <p style={{ margin: '0 0 10px', fontSize: 14, color: colors.ink }}>
+              Remove the custom dataset and restore the default DepEd data?
+              The dashboard will switch back immediately.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={removeLive}
+                style={{
+                  padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 13,
+                  border: 'none', background: colors.red, color: '#fff', fontWeight: 600,
+                }}
+              >
+                Yes, remove it
+              </button>
+              <button
+                onClick={() => setConfirming(false)}
+                style={{
+                  padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 13,
+                  border: '1px solid rgba(0,0,0,0.15)', background: '#fff',
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Replace: upload -> clean -> publish */}
         <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 8px' }}>
           {usingCustom ? 'Replace live dataset' : 'Publish a dataset'}
         </h3>
         <UploadSection
-          onDataLoaded={(name) => { setLive(name); setConfirming(false); }}
+          onDataLoaded={publish}
           liveLabel={usingCustom ? 'Replace live dataset' : 'Publish to dashboard'}
         />
       </div>
