@@ -15,6 +15,14 @@ import { Card } from './ui';
 
 type Row = Record<string, unknown>;
 
+// Nobody types into an empty AI box. Giving three real questions shows
+// what the feature can do and what kind of phrasing works.
+const EXAMPLES = [
+  'Which regions have the largest Grade 6 to 7 gap?',
+  'Top 10 provinces by senior high enrollment',
+  'How many schools offer senior high in each region?',
+];
+
 export default function AskSection() {
   const [provider, setProvider] = useState<Provider>('groq');
   const [apiKey, setApiKey] = useState('');
@@ -24,11 +32,13 @@ export default function AskSection() {
   const [status, setStatus] = useState<'idle' | 'thinking' | 'error' | 'done'>('idle');
   const [error, setError] = useState('');
 
-  async function ask() {
-    if (!apiKey.trim() || !question.trim()) return;
+  async function ask(text?: string) {
+    const asked = (text ?? question).trim();
+    if (!apiKey.trim() || !asked) return;
+    setQuestion(asked);
     setStatus('thinking'); setError(''); setRows([]); setSql('');
     try {
-      const generated = await questionToSQL(provider, apiKey.trim(), question.trim());
+      const generated = await questionToSQL(provider, apiKey.trim(), asked);
       setSql(generated);
       if (!isSafeSelect(generated)) {
         setError('The AI produced a query that isn\'t a safe read-only SELECT, so it was blocked.');
@@ -85,7 +95,7 @@ export default function AskSection() {
       </div>
 
       {/* Question */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
         <input
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
@@ -94,7 +104,7 @@ export default function AskSection() {
           style={{ ...inputStyle, flex: 1, minWidth: 220 }}
         />
         <button
-          onClick={ask}
+          onClick={() => ask()}
           disabled={status === 'thinking'}
           style={{
             padding: '9px 20px', borderRadius: 10, cursor: 'pointer', border: 'none',
@@ -103,6 +113,25 @@ export default function AskSection() {
         >
           {status === 'thinking' ? 'Thinking…' : 'Ask'}
         </button>
+      </div>
+
+      {/* Starter questions — click to fill and run */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontSize: 12.5, color: colors.inkSoft }}>Try:</span>
+        {EXAMPLES.map((ex) => (
+          <button
+            key={ex}
+            onClick={() => (apiKey.trim() ? ask(ex) : setQuestion(ex))}
+            disabled={status === 'thinking'}
+            style={{
+              padding: '6px 12px', borderRadius: 999, cursor: 'pointer', fontSize: 12.5,
+              border: `1px solid ${colors.line}`, background: colors.surface,
+              color: colors.inkSoft,
+            }}
+          >
+            {ex}
+          </button>
+        ))}
       </div>
 
       <p style={{ fontSize: 12, color: colors.inkSoft, margin: '0 0 14px' }}>

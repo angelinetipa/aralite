@@ -8,6 +8,7 @@ import { type Filters, scopeLabel } from '../lib/filters';
 import { colors } from '../constants/theme';
 import NavHeader from '../components/NavHeader';
 import Spinner from '../components/Spinner';
+import IntroPanel from '../components/IntroPanel';
 import FilterBar from '../components/FilterBar';
 import StatCards from '../components/StatCards';
 import InsightsSection from '../components/InsightsSection';
@@ -19,6 +20,7 @@ import RegionsSection from '../components/RegionsSection';
 import StrandGenderSection from '../components/StrandGenderSection';
 import OfferingSection from '../components/OfferingSection';
 import AskSection from '../components/AskSection';
+import DataNote from '../components/DataNote';
 
 export default function DashboardPage() {
   const [filters, setFilters] = useState<Filters>({});
@@ -32,9 +34,15 @@ export default function DashboardPage() {
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem 2rem', color: colors.ink }}>
       <NavHeader />
 
+      {/* Context comes before the spinner: a visitor can read what this is
+          while DuckDB and the parquet files are still loading. */}
+      <div style={{ marginTop: '1.5rem' }}>
+        <IntroPanel />
+      </div>
+
       {!ready && <Spinner />}
 
-      <div style={{ display: ready ? 'block' : 'none', marginTop: '1.5rem' }}>
+      <div style={{ display: ready ? 'block' : 'none' }}>
         <FilterBar filters={filters} onChange={setFilters} />
 
         <p style={{ fontSize: 14, color: colors.inkSoft, margin: '0 0 20px' }}>
@@ -62,6 +70,8 @@ export default function DashboardPage() {
         </div>
 
         <AskSection />
+
+        <DataNote />
       </div>
 
       <p style={{ color: colors.inkSoft, fontSize: 12, textAlign: 'center', margin: '8px 0 24px' }}>
