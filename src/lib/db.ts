@@ -111,13 +111,19 @@ export async function loadUploadedData(
     const existing = described
       .toArray()
       .map((r) => String((r.toJSON() as { column_name: string }).column_name));
-    const keep = existing.includes('Total Enrollment')
-      ? `* EXCLUDE ("Total Enrollment")`
-      : `*`;
+    //    The school ID is also cast to a real number here. Read as text
+    //    it turns every chart's join into a string comparison across
+    //    millions of rows, which is what made switching tabs take a
+    //    minute. The parquet data has always had it as a number.
+    const drop = existing.includes('Total Enrollment')
+      ? `* EXCLUDE ("Total Enrollment", "BEIS School ID")`
+      : `* EXCLUDE ("BEIS School ID")`;
 
     await conn.query(`
       CREATE OR REPLACE TABLE upload_schools AS
-        SELECT ${keep}, (${totalExpr}) AS "Total Enrollment"
+        SELECT ${drop},
+               TRY_CAST("BEIS School ID" AS BIGINT) AS "BEIS School ID",
+               (${totalExpr}) AS "Total Enrollment"
         FROM raw_upload;
     `);
     await conn.query(`CREATE OR REPLACE VIEW schools AS SELECT * FROM upload_schools;`);
@@ -133,7 +139,7 @@ export async function loadUploadedData(
     await conn.query(`
       CREATE OR REPLACE TABLE upload_enrollment AS
       SELECT
-        "BEIS School ID",
+        TRY_CAST("BEIS School ID" AS BIGINT) AS "BEIS School ID",
         TRY_CAST(value AS BIGINT) AS enrollment,          -- bad/empty -> NULL
         CASE WHEN col LIKE '% Male' THEN 'Male' ELSE 'Female' END AS gender,
         CASE
