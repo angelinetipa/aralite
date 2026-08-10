@@ -4,6 +4,8 @@
 
 Aralite turns the Department of Education's raw enrollment file (60,171 schools, 27M learners) into a clean, filterable dashboard. It runs a real SQL database *inside the browser*, so anyone can explore the data — drill from region down to a single barangay, read auto-generated findings, or ask questions in plain English.
 
+[![CI](https://github.com/angelinetipa/aralite/actions/workflows/ci.yml/badge.svg)](https://github.com/angelinetipa/aralite/actions/workflows/ci.yml)
+
 **Live:** [aralite.vercel.app](https://aralite.vercel.app)
 
 ![Aralite dashboard](docs/screenshot.jpeg)
