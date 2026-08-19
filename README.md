@@ -2,7 +2,7 @@
 
 **In-browser SQL analytics for Philippine school enrollment — no server, no database bill.**
 
-Aralite turns the Department of Education's raw enrollment file (60,171 schools, 27M learners) into a clean, filterable dashboard. It runs a real SQL database *inside the browser*, so anyone can explore the data — drill from region down to a single barangay, read auto-generated findings, or ask questions in plain English.
+Aralite turns the Department of Education's raw enrollment file (60,167 schools, 27M learners) into a clean, filterable dashboard. It runs a real SQL database *inside the browser*, so anyone can explore the data — drill from region down to a single barangay, read auto-generated findings, or ask questions in plain English.
 
 [![CI](https://github.com/angelinetipa/aralite/actions/workflows/ci.yml/badge.svg)](https://github.com/angelinetipa/aralite/actions/workflows/ci.yml)
 
@@ -28,7 +28,7 @@ The dashboard takes a moment on first load while the SQL engine boots in your br
 
 ## Features
 
-- **One-look dashboard** — total learners, the Grade 6→7 drop-off, gender balance, senior-high strand choices (and by gender), public vs private split, what schools offer, and enrollment by region.
+- **One-look dashboard** — total learners, the Grade 6→7 drop-off, gender balance, senior-high strand enrollment (and by gender), public vs private split, what schools offer, and enrollment by region.
 - **Location filters** — five cascading levels (Region → Province → Division → Municipality → Barangay) drive every chart and stat at once.
 - **Key findings** — plain-language insights calculated from the data, updating with the filter.
 - **Ask the data** — type a question in plain English; your own AI key (Groq or Gemini) writes the SQL, which runs read-only in the browser. The SQL is shown for trust.
@@ -40,7 +40,7 @@ The dashboard takes a moment on first load while the SQL engine boots in your br
 
 **Source:** DepEd Learner Information System, school-level enrollment, SY 2023–2024 (as of 31 January 2024). Public data, downloaded as an Excel file.
 
-**Shape:** 60,171 rows — one per school — with 14 descriptive columns and 58 enrollment columns. Reshaped into roughly 3.5 million rows, one per school × grade × gender.
+**Shape:** 60,167 rows — one per school — with 14 descriptive columns and 58 enrollment columns. Reshaped into roughly 3.5 million rows, one per school × grade × gender.
 
 **The governing rule was zero data loss.** The cleaning script never deletes a row or a column. It repairs values in place and adds standardized copies alongside the originals, so every published number can be traced back to the source file.
 

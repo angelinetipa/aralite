@@ -1,7 +1,10 @@
 // src/components/StrandGenderSection.tsx
-// Gender skew within each senior-high strand. Grouped bars make the
+// Gender balance within each senior-high strand. Grouped bars make the
 // imbalance obvious (e.g. ABM leans female, PBM leans male) — useful
 // for gender-responsive program planning.
+//
+// Wording note: this is enrollment, not choice. Availability shapes these
+// bars too, so nothing here says boys and girls "choose" a strand.
 
 import { useEffect, useState } from 'react';
 import {
@@ -28,9 +31,9 @@ export default function StrandGenderSection({ filters }: { filters: Filters }) {
 
   return (
     <Card
-      title="Strand choice by gender"
+      title="Strand enrollment by gender"
       accent={colors.blue}
-      subtitle="Which senior-high strands boys and girls choose — the gaps guide gender-responsive planning."
+      subtitle="Male and female enrollment within each senior-high strand. The widest gaps show where gender-responsive planning may help."
     >
       <div style={{ height: 340 }}>
         <ResponsiveContainer width="100%" height="100%">

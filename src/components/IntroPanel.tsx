@@ -51,7 +51,7 @@ export default function IntroPanel() {
       >
         Aralite turns the Department of Education&rsquo;s raw enrollment file into something
         you can actually explore. Every public and private school in the country for school
-        year 2023&ndash;2024 &mdash; <strong style={{ color: colors.ink }}>60,171 schools</strong>{' '}
+        year 2023&ndash;2024 &mdash; <strong style={{ color: colors.ink }}>60,167 schools</strong>{' '}
         and <strong style={{ color: colors.ink }}>27 million learners</strong> &mdash; filterable
         down to your own barangay.
       </p>

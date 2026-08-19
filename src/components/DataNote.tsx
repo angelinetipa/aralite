@@ -8,7 +8,7 @@ import { colors, clay } from '../constants/theme';
 const FACTS = [
   { label: 'Source', value: 'DepEd Learner Information System' },
   { label: 'Coverage', value: 'School year 2023–2024' },
-  { label: 'Rows', value: '60,171 schools' },
+  { label: 'Rows', value: '60,167 schools' },
   { label: 'Grain', value: 'One row per school, not per learner' },
 ];
 

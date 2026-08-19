@@ -1,5 +1,10 @@
 // src/components/StrandsSection.tsx
-// The SHS choice gap: which strands students actually pick.
+// Senior-high enrollment by strand.
+//
+// Wording note: this chart measures ENROLLMENT, not choice. A learner can
+// only enrol in a strand their own school offers, so these bars mix what
+// learners want with what is available to them. This dataset cannot
+// separate the two, so nothing here says "choose", "pick", or "prefer".
 
 import { useEffect, useState } from 'react';
 import {
@@ -28,12 +33,12 @@ export default function StrandsSection({ filters }: { filters: Filters }) {
 
   return (
     <Card
-      title="What senior-high students choose"
+      title="Where senior-high learners are enrolled"
       accent={colors.blue}
       subtitle={
         top
-          ? `${top.strand} leads with ${top.total.toLocaleString()} learners — where students head after Grade 10.`
-          : 'Senior-high strand enrollment.'
+          ? `${top.strand} has the most learners at ${top.total.toLocaleString()} — but enrollment reflects what schools offer, not only what learners want.`
+          : 'Senior-high enrollment by strand.'
       }
     >
       <div style={{ height: 340 }}>
