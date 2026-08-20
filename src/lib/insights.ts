@@ -10,6 +10,7 @@
 
 import { query } from './db';
 import { type Filters, filterConditions, scopeLabel } from './filters';
+import { largestGap, GRADE_ORDER } from './metrics';
 
 export type Insight = { tone: 'alert' | 'info' | 'good'; headline: string; detail: string };
 
@@ -72,23 +73,18 @@ export async function getInsights(f: Filters): Promise<Insight[]> {
     ${where(f, ["e.grade IN ('G1','G2','G3','G4','G5','G6','G7','G8','G9','G10','G11','G12')"])}
     GROUP BY e.grade
   `);
-  const order = ['G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'G8', 'G9', 'G10', 'G11', 'G12'];
-  const byGrade = order
-    .map((g) => ({ g, n: Number(grades.find((r) => r.grade === g)?.total ?? 0) }))
-    .filter((x) => x.n > 0);
-  let worst = { from: '', to: '', drop: 0, base: 0 };
-  for (let i = 1; i < byGrade.length; i++) {
-    const drop = byGrade[i - 1].n - byGrade[i].n;
-    if (drop > worst.drop) {
-      worst = { from: byGrade[i - 1].g, to: byGrade[i].g, drop, base: byGrade[i - 1].n };
-    }
-  }
-  if (worst.drop > 0) {
-    const pct = Math.round((worst.drop / worst.base) * 100);
+  const byGrade = GRADE_ORDER
+    .map((g) => ({ grade: g, total: Number(grades.find((r) => r.grade === g)?.total ?? 0) }))
+    .filter((x) => x.total > 0);
+
+  // Same shared function DropoffSection uses — see metrics.ts for why.
+  const worst = largestGap(byGrade);
+
+  if (worst) {
     out.push({
       tone: 'alert',
       headline: `Largest gap between grade levels: ${worst.from} → ${worst.to}`,
-      detail: `${worst.to} has ${worst.drop.toLocaleString()} fewer learners enrolled than ${worst.from} in ${scope} — ${pct}% smaller. These are two different groups counted in the same school year, not one group followed over time, so this is not a dropout rate. Migration, cohort size, and reporting differences can all produce the same gap. It is a signal worth checking, not a measurement.`,
+      detail: `${worst.to} has ${worst.lost.toLocaleString()} fewer learners enrolled than ${worst.from} in ${scope} — ${worst.pct}% smaller. These are two different groups counted in the same school year, not one group followed over time, so this is not a dropout rate. Migration, cohort size, and reporting differences can all produce the same gap. It is a signal worth checking, not a measurement.`,
     });
   }
 

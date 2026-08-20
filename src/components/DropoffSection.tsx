@@ -17,10 +17,9 @@ import {
 import { getByGrade, type GradeRow } from '../lib/queries';
 import { type Filters } from '../lib/filters';
 import { compact } from '../lib/format';
+import { largestGap, GRADE_ORDER } from '../lib/metrics';
 import { colors } from '../constants/theme';
 import { Card, ErrorState } from './ui';
-
-const ORDER = ['K', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'G8', 'G9', 'G10', 'G11', 'G12'];
 
 export default function DropoffSection({ filters }: { filters: Filters }) {
   const [data, setData] = useState<GradeRow[]>([]);
@@ -37,33 +36,27 @@ export default function DropoffSection({ filters }: { filters: Filters }) {
   if (status === 'error') return <ErrorState />;
   if (data.length === 0) return null;
 
-  // Find the biggest fall between consecutive grades, whatever it is.
-  const ordered = ORDER
+  // One shared implementation, tested in metrics.test.ts. This used to
+  // be a second copy of the same loop, which is how it ended up naming a
+  // different grade than the Key findings panel for the same region.
+  const ordered = GRADE_ORDER
     .map((g) => data.find((d) => d.grade === g))
-    .filter((d): d is GradeRow => Boolean(d) && d!.total > 0);
+    .filter((d): d is GradeRow => d !== undefined && d.total > 0);
 
-  let worst = { from: '', to: '', lost: 0, base: 0 };
-  for (let i = 1; i < ordered.length; i++) {
-    const lost = ordered[i - 1].total - ordered[i].total;
-    if (lost > worst.lost) {
-      worst = { from: ordered[i - 1].grade, to: ordered[i].grade, lost, base: ordered[i - 1].total };
-    }
-  }
-
-  const pct = worst.base ? Math.round((worst.lost / worst.base) * 100) : 0;
-  const dip = ordered.find((d) => d.grade === worst.to);
+  const gap = largestGap(ordered);
+  const dip = gap ? ordered.find((d) => d.grade === gap.to) : undefined;
 
   return (
     <Card
       title={
-        worst.lost > 0
-          ? `The largest gap is ${worst.from} to ${worst.to} — ${pct}% fewer learners`
+        gap
+          ? `The largest gap is ${gap.from} to ${gap.to} — ${gap.pct}% fewer learners`
           : 'Enrollment by grade level'
       }
       accent={colors.red}
       subtitle={
-        worst.lost > 0
-          ? `${worst.lost.toLocaleString()} fewer learners enrolled in ${worst.to} than ${worst.from}. Two different groups counted in the same year — not a dropout rate.`
+        gap
+          ? `${gap.lost.toLocaleString()} fewer learners in ${gap.to} than ${gap.from} — two different groups counted in the same year, not a dropout rate.`
           : 'Enrollment per grade level.'
       }
     >
@@ -87,7 +80,7 @@ export default function DropoffSection({ filters }: { filters: Filters }) {
                 x={dip.grade} y={dip.total} r={7}
                 fill={colors.red} stroke="#fff" strokeWidth={2}
                 label={{
-                  value: worst.to, position: 'top', offset: 10,
+                  value: gap!.to, position: 'top', offset: 10,
                   style: { fontSize: 11, fontWeight: 700, fill: colors.red },
                 }}
               />
