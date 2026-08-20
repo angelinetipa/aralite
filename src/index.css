@@ -3,7 +3,9 @@
    max-width #root — that's what caused the black side bars.
    We replace it with a clean light base; layout lives in components. */
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -14,7 +16,9 @@ body {
   color: #1A1A1A;
 }
 
-#root { width: 100%; }
+#root {
+  width: 100%;
+}
 
 /* Two-column dashboard (findings | charts) collapses to one column
    on narrow screens so nothing gets squished on phones/tablets. */
@@ -22,8 +26,32 @@ body {
   .aralite-cols {
     grid-template-columns: 1fr !important;
   }
+
   /* On mobile the findings shouldn't stick — they'd cover the charts. */
-  .aralite-cols > div:first-child {
+  .aralite-cols>div:first-child {
     position: static !important;
+  }
+}
+
+/* Visual hierarchy: the story leads, context supports.
+   Charts below "The rest of the picture" describe the dataset rather
+   than argue the finding, so they sit back in muted colour. Hovering
+   the block restores full saturation — quiet by default, sharp when
+   you actually engage with it. */
+.aralite-context {
+  filter: saturate(0.4);
+  transition: filter 220ms ease;
+}
+
+.aralite-context:hover,
+.aralite-context:focus-within {
+  filter: none;
+}
+
+/* Respect users who ask for less motion: no fade, just full colour. */
+@media (prefers-reduced-motion: reduce) {
+  .aralite-context {
+    filter: none;
+    transition: none;
   }
 }

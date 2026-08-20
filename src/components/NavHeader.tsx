@@ -1,6 +1,7 @@
 // src/components/NavHeader.tsx
-// Shared top bar with the Aralite mark + links to the two areas:
-// the public Dashboard and the Admin (data management) page.
+// Shared top bar with the Aralite mark + links to the three areas:
+// the Dashboard (the argument), Explore (the tools), and Admin
+// (data management).
 
 import { Link, useLocation } from 'react-router-dom';
 import { colors } from '../constants/theme';
@@ -49,6 +50,7 @@ export default function NavHeader() {
         </div>
         <nav style={{ display: 'flex', gap: 6 }}>
           {link('/', 'Dashboard')}
+          {link('/explore', 'Explore')}
           {link('/admin', 'Admin')}
         </nav>
       </div>

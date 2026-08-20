@@ -12,6 +12,7 @@
 
 import { useEffect, useState } from 'react';
 import { getDB } from '../lib/db';
+import { Link } from 'react-router-dom';
 import { type Filters, scopeLabel } from '../lib/filters';
 import { colors } from '../constants/theme';
 import NavHeader from '../components/NavHeader';
@@ -29,7 +30,6 @@ import SectorSection from '../components/SectorSection';
 import RegionsSection from '../components/RegionsSection';
 import StrandGenderSection from '../components/StrandGenderSection';
 import OfferingSection from '../components/OfferingSection';
-import AskSection from '../components/AskSection';
 import DataNote from '../components/DataNote';
 
 function ActLabel({ kicker, title, blurb }: { kicker: string; title: string; blurb?: string }) {
@@ -106,7 +106,7 @@ export default function DashboardPage() {
             display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) 1fr',
             gap: 24, alignItems: 'start',
           }}
-          className="aralite-cols"
+          className="aralite-cols aralite-context"
         >
           <div style={{ position: 'sticky', top: 16 }}>
             <InsightsSection filters={filters} />
@@ -122,7 +122,23 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <AskSection />
+        {/* The tools live on /explore so they do not compete with the
+            finding above. A pointer, not the tools themselves. */}
+        <div
+          style={{
+            margin: '30px 0 4px', padding: '1.1rem 1.3rem',
+            border: `1px dashed ${colors.line}`, borderRadius: 16,
+          }}
+        >
+          <p style={{ margin: 0, fontSize: 14, color: colors.inkSoft, lineHeight: 1.65 }}>
+            <strong style={{ color: colors.ink }}>Want to check something yourself?</strong>{' '}
+            Look up any of 60,167 schools by name, or ask a question in plain English and watch
+            the SQL it writes —{' '}
+            <Link to="/explore" style={{ color: colors.blue, fontWeight: 600 }}>
+              go to Explore →
+            </Link>
+          </p>
+        </div>
 
         {/* ---- Limits ---------------------------------------------------- */}
         <DataNote />
