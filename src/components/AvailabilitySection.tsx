@@ -1,14 +1,19 @@
 // src/components/AvailabilitySection.tsx
-// The evidence behind the finding.
+// The evidence behind the finding, one metric per card.
+//
+// Rendered twice by the dashboard, in the same order as the written
+// analysis: how many strands a school runs, then how many learners have
+// no alternative. Keeping the two in step means the page and the writeup
+// can never drift apart.
 //
 // Deliberately NOT filtered. Every other chart narrows when you pick a
 // region; this one always shows all 18, because its job is to be the
 // benchmark. Filtering it to a single bar would leave nothing to compare
-// against, which is the whole point. The active filter highlights a bar
-// instead of removing the rest.
+// against. The active filter outlines a bar instead of removing the rest.
 //
-// The dashed line is the national figure. A bar with no reference line
-// is a number the reader has no way to judge.
+// Sorting happens here, never in SQL. Ordering by a raw SUM while drawing
+// a percentage put this chart in the wrong order and produced a false
+// headline — the sort must use the same number the bars use.
 
 import { useEffect, useState } from 'react';
 import {
@@ -19,9 +24,38 @@ import { type Filters } from '../lib/filters';
 import { colors } from '../constants/theme';
 import { Card, ErrorState } from './ui';
 
-export default function AvailabilitySection({ filters }: { filters: Filters }) {
+export type Metric = 'avgStrands' | 'pctLearnersOneStrand';
+
+// Each metric carries its own scale, wording, and sense of which
+// direction is bad — kept together so they cannot fall out of sync.
+const SPEC = {
+  avgStrands: {
+    axis: 'Average strands a school runs (out of 8 possible)',
+    max: 8,
+    ticks: [0, 2, 4, 6, 8],
+    format: (v: number) => v.toFixed(2),
+    tickFormat: (v: number) => `${v}`,
+    tooltip: 'Average strands per school',
+    worseWhen: 'below' as const,
+    sortAsc: true,          // fewest strands first — worst at the top
+  },
+  pctLearnersOneStrand: {
+    axis: '% of senior-high learners in a single-strand school',
+    max: null,
+    ticks: null,
+    format: (v: number) => `${v.toFixed(1)}%`,
+    tickFormat: (v: number) => `${v}%`,
+    tooltip: 'Learners in single-strand schools',
+    worseWhen: 'above' as const,
+    sortAsc: false,         // highest share first — worst at the top
+  },
+};
+
+export default function AvailabilitySection({
+  filters, metric,
+}: { filters: Filters; metric: Metric }) {
   const [rows, setRows] = useState<AvailabilityRegionRow[]>([]);
-  const [nationalPct, setNationalPct] = useState(0);
+  const [national, setNational] = useState({ avgStrands: 0, pctLearnersOneStrand: 0 });
   const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading');
 
   useEffect(() => {
@@ -29,7 +63,10 @@ export default function AvailabilitySection({ filters }: { filters: Filters }) {
     Promise.all([getAvailabilityByRegion(), getAvailability({})])
       .then(([r, a]) => {
         setRows(r);
-        setNationalPct(a.national.pctLearnersOneStrand);
+        setNational({
+          avgStrands: a.national.avgStrands,
+          pctLearnersOneStrand: a.national.pctLearnersOneStrand,
+        });
         setStatus('ready');
       })
       .catch(() => setStatus('error'));
@@ -39,30 +76,52 @@ export default function AvailabilitySection({ filters }: { filters: Filters }) {
   if (status === 'error') return <ErrorState />;
   if (rows.length === 0) return null;
 
-  const top = rows[0];
-  const bottom = rows[rows.length - 1];
-  const ratio = bottom.pctLearnersOneStrand
-    ? top.pctLearnersOneStrand / bottom.pctLearnersOneStrand
-    : 0;
+  const spec = SPEC[metric];
+  const nat = national[metric];
+
+  // Sort by the metric actually being drawn, worst region first.
+  const data = [...rows].sort((a, b) =>
+    spec.sortAsc ? a[metric] - b[metric] : b[metric] - a[metric]);
+
+  const worst = data[0];
+  const best = data[data.length - 1];
+
+  // Round the axis up to a clean number. Leaving it at the exact maximum
+  // printed a tick reading "22.49897703308118%".
+  const dataMax = Math.max(...data.map((r) => r[metric]));
+  const axisMax = spec.max ?? Math.ceil(dataMax / 5) * 5;
+  const ticks = spec.ticks ?? Array.from(
+    { length: axisMax / 5 + 1 }, (_, i) => i * 5);
+
+  const title = metric === 'avgStrands'
+    ? `The average senior high school runs ${nat.toFixed(1)} of 8 strands — in ${worst.region} it is closer to ${Math.round(worst.avgStrands)}`
+    : `A senior-high learner in ${worst.region} is ${(worst[metric] / best[metric]).toFixed(0)}× more likely than one in ${best.region} to attend a school running only one strand`;
+
+  const subtitle = metric === 'avgStrands'
+    ? `Regions are ordered fewest strands first. The dashed line is the national figure, ${nat.toFixed(2)} — that is every region counted together, so a bar to its left is below the country as a whole.`
+    : `Share of senior-high learners whose school runs a single strand. The dashed line is the national figure, ${nat.toFixed(1)}% — the whole country counted as one. This chart stays national on purpose: it is the benchmark everything else is measured against.`;
 
   return (
     <Card
-      title={`A senior-high learner in ${top.region} is ${ratio.toFixed(0)}× more likely than one in ${bottom.region} to attend a school running only one strand`}
-      accent={colors.red}
-      subtitle={`Share of senior-high learners whose school runs a single strand. The dashed line is the national figure, ${nationalPct.toFixed(1)}%. This chart stays national on purpose — it is the benchmark the rest of the dashboard is measured against.`}
+      title={title}
+      accent={metric === 'avgStrands' ? colors.blue : colors.red}
+      subtitle={subtitle}
     >
       <div style={{ height: 460 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={rows} layout="vertical" margin={{ top: 8, right: 40, bottom: 8, left: 8 }}>
+          {/* Top margin leaves room for the reference-line label, which was
+              being clipped by the plot area. */}
+          <BarChart data={data} layout="vertical" margin={{ top: 26, right: 28, bottom: 24, left: 8 }}>
             <CartesianGrid stroke={colors.line} horizontal={false} />
             <XAxis
               type="number"
-              domain={[0, 'dataMax']}
+              domain={[0, axisMax]}
+              ticks={ticks}
               tick={{ fontSize: 12, fill: colors.inkSoft }}
-              tickFormatter={(v) => `${v}%`}
+              tickFormatter={spec.tickFormat}
               label={{
-                value: '% of senior-high learners in a single-strand school',
-                position: 'insideBottom', offset: -4,
+                value: spec.axis,
+                position: 'insideBottom', offset: -14,
                 style: { fontSize: 11, fill: colors.inkSoft },
               }}
             />
@@ -70,29 +129,28 @@ export default function AvailabilitySection({ filters }: { filters: Filters }) {
               type="category" dataKey="region" width={104} interval={0}
               tick={{ fontSize: 11.5, fill: colors.ink }}
             />
-            <Tooltip
-              formatter={(v) => [`${Number(v).toFixed(1)}%`, 'Learners in single-strand schools']}
-            />
+            <Tooltip formatter={(v) => [spec.format(Number(v)), spec.tooltip]} />
             <ReferenceLine
-              x={nationalPct}
+              x={nat}
               stroke={colors.ink}
               strokeDasharray="4 4"
+              strokeWidth={1.4}
+              ifOverflow="extendDomain"
               label={{
-                value: `National ${nationalPct.toFixed(1)}%`,
-                position: 'top',
+                value: `National ${spec.format(nat)}`,
+                position: 'top', offset: 8,
                 style: { fontSize: 11, fill: colors.ink, fontWeight: 700 },
               }}
             />
-            <Bar dataKey="pctLearnersOneStrand" radius={[0, 6, 6, 0]}>
-              {rows.map((r) => {
-                const selected = filters.region === r.region;
-                const above = r.pctLearnersOneStrand > nationalPct;
+            <Bar dataKey={metric} radius={[0, 6, 6, 0]}>
+              {data.map((r) => {
+                const worse = spec.worseWhen === 'above' ? r[metric] > nat : r[metric] < nat;
                 return (
                   <Cell
                     key={r.region}
-                    fill={above ? colors.red : colors.blueSoft}
-                    stroke={selected ? colors.ink : undefined}
-                    strokeWidth={selected ? 2 : 0}
+                    fill={worse ? colors.red : colors.blueSoft}
+                    stroke={filters.region === r.region ? colors.ink : undefined}
+                    strokeWidth={filters.region === r.region ? 2 : 0}
                   />
                 );
               })}

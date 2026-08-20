@@ -119,8 +119,11 @@ export async function getAvailabilityByRegion(): Promise<AvailabilityRegionRow[]
            SUM(CASE WHEN strands = 1 THEN learners ELSE 0 END) AS one_learners
     FROM per_school
     GROUP BY region
-    ORDER BY 4 DESC
   `);
+  // Deliberately unsorted here. Ordering by a raw SUM would rank regions
+  // by headcount while the chart displays a percentage — the two disagree,
+  // and the chart silently ends up in the wrong order. The component sorts
+  // by whichever metric it is actually drawing.
 
   return rows.map((r) => {
     const learners = Number(r.learners);

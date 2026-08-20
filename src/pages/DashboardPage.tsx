@@ -90,9 +90,10 @@ export default function DashboardPage() {
         <ActLabel
           kicker="The evidence"
           title="Where strand availability is narrowest"
-          blurb="This chart stays national so there is always something to compare against. Pick a region above and it is outlined here rather than isolated."
+          blurb="Two charts, in the same order as the written analysis: how many strands a school runs, then how many learners have no alternative. Both stay national so there is always something to compare against — pick a region above and it is outlined here rather than isolated."
         />
-        <AvailabilitySection filters={filters} />
+        <AvailabilitySection filters={filters} metric="avgStrands" />
+        <AvailabilitySection filters={filters} metric="pctLearnersOneStrand" />
 
         {/* ---- Context --------------------------------------------------- */}
         <ActLabel
