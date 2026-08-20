@@ -8,6 +8,7 @@ import {
 } from 'recharts';
 import { getTopRegions, type RegionRow } from '../lib/queries';
 import { type Filters } from '../lib/filters';
+import { compact } from '../lib/format';
 import { colors } from '../constants/theme';
 import { Card, ErrorState } from './ui';
 
@@ -43,7 +44,7 @@ export default function RegionsSection({
             <XAxis
               type="number"
               tick={{ fontSize: 12, fill: colors.inkSoft }}
-              tickFormatter={(v) => `${(v / 1_000_000).toFixed(1)}M`}
+              tickFormatter={compact}
             />
             <YAxis
               type="category" dataKey="region" width={130}

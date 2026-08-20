@@ -3,15 +3,20 @@
 //
 // Order is an argument, not a layout:
 //   scene    — one filter, and what it currently selects
-//   finding  — the single claim this dashboard makes, stated in a sentence
+//   finding  — the single claim this dashboard makes, in a sentence
 //   evidence — the two charts that support it, benchmarked nationally
-//   context  — everything else, muted, for a reader looking around
+//   context  — everything else, COLLAPSED by default
 //   tools    — ask the data yourself
 //   limits   — what none of it can tell you
 //
-// The tools sit at the BOTTOM on purpose. Above the finding they compete
-// with it for attention, and a visitor who lands here should meet the
-// argument first. Anyone who wants to dig has already scrolled.
+// The context block starts closed. Open, it made the page a wall of
+// charts and left the reader to work out which mattered; closed, the
+// default view is filter -> finding -> evidence, and the rest is an
+// appendix for anyone who wants it. It also means six chart queries
+// never run unless someone asks for them.
+//
+// Tools sit at the BOTTOM on purpose. Above the finding they compete
+// with it, and a visitor landing here should meet the argument first.
 
 import { useEffect, useState } from 'react';
 import { getDB } from '../lib/db';
@@ -27,7 +32,6 @@ import StorySection from '../components/StorySection';
 import AvailabilitySection from '../components/AvailabilitySection';
 import InsightsSection from '../components/InsightsSection';
 import DropoffSection from '../components/DropoffSection';
-import GenderSection from '../components/GenderSection';
 import StrandsSection from '../components/StrandsSection';
 import SectorSection from '../components/SectorSection';
 import RegionsSection from '../components/RegionsSection';
@@ -38,7 +42,7 @@ import DataNote from '../components/DataNote';
 
 function ActLabel({ kicker, title, blurb }: { kicker: string; title: string; blurb?: string }) {
   return (
-    <div style={{ margin: '34px 0 16px' }}>
+    <div style={{ margin: '38px 0 16px' }}>
       <div
         style={{
           fontSize: 11, fontWeight: 800, letterSpacing: '0.08em',
@@ -49,7 +53,7 @@ function ActLabel({ kicker, title, blurb }: { kicker: string; title: string; blu
       </div>
       <h2 style={{ fontSize: 19, fontWeight: 800, margin: 0, color: colors.ink }}>{title}</h2>
       {blurb && (
-        <p style={{ fontSize: 13.5, color: colors.inkSoft, margin: '6px 0 0', maxWidth: '68ch', lineHeight: 1.6 }}>
+        <p style={{ fontSize: 13.5, color: colors.inkSoft, margin: '6px 0 0', maxWidth: '62ch', lineHeight: 1.6 }}>
           {blurb}
         </p>
       )}
@@ -60,6 +64,7 @@ function ActLabel({ kicker, title, blurb }: { kicker: string; title: string; blu
 export default function DashboardPage() {
   const [filters, setFilters] = useState<Filters>({});
   const [search, setSearch] = useState('');
+  const [showContext, setShowContext] = useState(false);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -73,7 +78,7 @@ export default function DashboardPage() {
       <NavHeader />
 
       {/* Context before the spinner: a visitor can read what this is while
-          DuckDB and the parquet files are still loading. */}
+          DuckDB and the parquet files load. */}
       <div style={{ marginTop: '1.5rem' }}>
         <IntroPanel />
       </div>
@@ -96,7 +101,6 @@ export default function DashboardPage() {
           )}
         </p>
 
-        {/* Appears only when the filter or search actually selects something. */}
         <SchoolPanel filters={filters} search={search} />
 
         <StatCards filters={filters} />
@@ -108,44 +112,64 @@ export default function DashboardPage() {
         <ActLabel
           kicker="The evidence"
           title="Where strand availability is narrowest"
-          blurb="Two charts, in the same order as the written analysis: how many strands a school runs, then how many learners have no alternative. Both stay national so there is always something to compare against — pick a region above and it is outlined here rather than isolated."
+          blurb="Both charts stay national. Pick a region above and it is outlined, not isolated."
         />
         <AvailabilitySection filters={filters} metric="avgStrands" />
         <AvailabilitySection filters={filters} metric="pctLearnersOneStrand" />
 
-        {/* ---- Context --------------------------------------------------- */}
-        <ActLabel
-          kicker="Context"
-          title="The rest of the picture"
-          blurb={`Everything below follows your filter — currently ${scope}. These describe the dataset rather than argue the finding above: useful for looking around, not for settling the question.`}
-        />
-
-        <div
-          style={{
-            display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) 1fr',
-            gap: 24, alignItems: 'start',
-          }}
-          className="aralite-cols aralite-context"
-        >
-          <div style={{ position: 'sticky', top: 16 }}>
-            <InsightsSection filters={filters} />
-          </div>
-          <div>
-            <StrandsSection filters={filters} />
-            <SectorSection filters={filters} />
-            <OfferingSection filters={filters} />
-            <DropoffSection filters={filters} />
-            <GenderSection filters={filters} />
-            <StrandGenderSection filters={filters} />
-            <RegionsSection filters={filters} onPick={(r) => setFilters({ region: r })} />
-          </div>
+        {/* ---- Context, closed by default -------------------------------- */}
+        <div style={{ margin: '38px 0 0' }}>
+          <button
+            onClick={() => setShowContext((v) => !v)}
+            aria-expanded={showContext}
+            style={{
+              width: '100%', textAlign: 'left', cursor: 'pointer',
+              padding: '1rem 1.2rem', borderRadius: 16,
+              border: `1px dashed ${colors.line}`, background: 'transparent',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16,
+            }}
+          >
+            <span>
+              <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: colors.ink }}>
+                {showContext ? 'Hide the rest of the data' : 'Show the rest of the data'}
+              </span>
+              <span style={{ display: 'block', fontSize: 13, color: colors.inkSoft, marginTop: 3 }}>
+                Six more charts describing {scope}. They fill in the picture; they do not argue the finding.
+              </span>
+            </span>
+            <span style={{ fontSize: 20, color: colors.inkSoft, lineHeight: 1 }}>
+              {showContext ? '−' : '+'}
+            </span>
+          </button>
         </div>
+
+        {showContext && (
+          <div
+            style={{
+              display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) 1fr',
+              gap: 24, alignItems: 'start', marginTop: 22,
+            }}
+            className="aralite-cols aralite-context"
+          >
+            <div style={{ position: 'sticky', top: 16 }}>
+              <InsightsSection filters={filters} />
+            </div>
+            <div>
+              <StrandsSection filters={filters} />
+              <SectorSection filters={filters} />
+              <OfferingSection filters={filters} />
+              <DropoffSection filters={filters} />
+              <StrandGenderSection filters={filters} />
+              <RegionsSection filters={filters} onPick={(r) => setFilters({ region: r })} />
+            </div>
+          </div>
+        )}
 
         {/* ---- Tools ------------------------------------------------------ */}
         <ActLabel
           kicker="Ask it yourself"
           title="Put a question to the data"
-          blurb="Type a question in plain English and watch the SQL it writes, then the result. This one queries the whole dataset and ignores the filter above — the SQL it shows you is the exact scope it used."
+          blurb="Plain English in, SQL and results out. Queries the whole dataset, ignoring the filter above."
         />
         <AskSection />
 

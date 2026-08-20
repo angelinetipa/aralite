@@ -36,3 +36,31 @@ export function Loading() {
 export function ErrorState() {
   return <p style={{ color: colors.red }}>Could not load data.</p>;
 }
+
+/**
+ * A one-line summary that opens to the full text.
+ *
+ * The caveats on this dashboard matter, but printed in full they turned
+ * every card into a wall of prose. Collapsed, the page stays scannable
+ * and the detail is one click away for anyone who wants it — which is
+ * the reader who was going to read it anyway.
+ */
+export function Disclosure({
+  summary, children,
+}: { summary: string; children: React.ReactNode }) {
+  return (
+    <details style={{ marginTop: 12 }}>
+      <summary
+        style={{
+          cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
+          color: colors.inkSoft, listStyle: 'revert',
+        }}
+      >
+        {summary}
+      </summary>
+      <div style={{ fontSize: 12.5, color: colors.inkSoft, lineHeight: 1.65, marginTop: 8 }}>
+        {children}
+      </div>
+    </details>
+  );
+}

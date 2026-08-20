@@ -47,7 +47,7 @@ export default function SchoolPanel({
       accent={colors.blue}
       subtitle={
         hits.length === 50
-          ? 'Showing the first 50. Narrow the filters above, or search by name, to see fewer.'
+          ? 'Showing the first 50 — narrow the filters above to see fewer.'
           : 'Click any school to see its full enrollment profile.'
       }
     >

@@ -30,7 +30,7 @@ export default function OfferingSection({ filters }: { filters: Filters }) {
     <Card
       title="What schools offer"
       accent={colors.yellow}
-      subtitle="School counts by the levels they provide — the shape of the education system."
+      subtitle="School counts by the levels they provide."
     >
       <div style={{ height: Math.max(280, data.length * 40) }}>
         <ResponsiveContainer width="100%" height="100%">

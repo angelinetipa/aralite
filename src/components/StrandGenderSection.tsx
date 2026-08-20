@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { getStrandByGender, type StrandGenderRow } from '../lib/queries';
 import { type Filters } from '../lib/filters';
+import { compact } from '../lib/format';
 import { colors } from '../constants/theme';
 import { Card, ErrorState } from './ui';
 
@@ -33,7 +34,7 @@ export default function StrandGenderSection({ filters }: { filters: Filters }) {
     <Card
       title="Strand enrollment by gender"
       accent={colors.blue}
-      subtitle="Male and female enrollment within each senior-high strand. The widest gaps show where gender-responsive planning may help."
+      subtitle="Male and female enrollment within each senior-high strand."
     >
       <div style={{ height: 340 }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -41,7 +42,7 @@ export default function StrandGenderSection({ filters }: { filters: Filters }) {
             <CartesianGrid stroke={colors.line} horizontal={false} />
             <XAxis
               type="number" tick={{ fontSize: 12, fill: colors.inkSoft }}
-              tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+              tickFormatter={compact}
             />
             <YAxis type="category" dataKey="strand" width={110} interval={0} tick={{ fontSize: 12, fill: colors.ink }} />
             <Tooltip formatter={(v) => Number(v).toLocaleString()} />

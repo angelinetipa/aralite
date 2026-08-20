@@ -98,8 +98,8 @@ export default function AvailabilitySection({
     : `A senior-high learner in ${worst.region} is ${(worst[metric] / best[metric]).toFixed(0)}× more likely than one in ${best.region} to attend a school running only one strand`;
 
   const subtitle = metric === 'avgStrands'
-    ? `Regions are ordered fewest strands first. The dashed line is the national figure, ${nat.toFixed(2)} — that is every region counted together, so a bar to its left is below the country as a whole.`
-    : `Share of senior-high learners whose school runs a single strand. The dashed line is the national figure, ${nat.toFixed(1)}% — the whole country counted as one. This chart stays national on purpose: it is the benchmark everything else is measured against.`;
+    ? `Fewest strands first. Dashed line is the national figure, ${nat.toFixed(2)} — all 18 regions counted together.`
+    : `Share of learners whose school runs a single strand. Dashed line is the national figure, ${nat.toFixed(1)}%.`;
 
   return (
     <Card

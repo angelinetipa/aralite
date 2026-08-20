@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { getByStrand, type StrandRow } from '../lib/queries';
 import { type Filters } from '../lib/filters';
+import { compact } from '../lib/format';
 import { colors } from '../constants/theme';
 import { Card, ErrorState } from './ui';
 
@@ -37,7 +38,7 @@ export default function StrandsSection({ filters }: { filters: Filters }) {
       accent={colors.blue}
       subtitle={
         top
-          ? `${top.strand} has the most learners at ${top.total.toLocaleString()} — but enrollment reflects what schools offer, not only what learners want.`
+          ? `${top.strand} leads with ${top.total.toLocaleString()} learners — enrollment, not preference.`
           : 'Senior-high enrollment by strand.'
       }
     >
@@ -48,7 +49,7 @@ export default function StrandsSection({ filters }: { filters: Filters }) {
             <XAxis
               type="number"
               tick={{ fontSize: 12, fill: colors.inkSoft }}
-              tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+              tickFormatter={compact}
             />
             <YAxis
               type="category" dataKey="strand" width={110}
