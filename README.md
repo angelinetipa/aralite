@@ -2,7 +2,13 @@
 
 **In-browser SQL analytics for Philippine school enrollment — no server, no database bill.**
 
-Aralite turns the Department of Education's raw enrollment file (60,167 schools, 27M learners) into a clean, filterable dashboard. It runs a real SQL database *inside the browser*, so anyone can explore the data — drill from region down to a single barangay, read auto-generated findings, or ask questions in plain English.
+Aralite turns the Department of Education's raw enrollment file (60,167 schools, 27M learners) into a clean, filterable dashboard. It runs a real SQL database *inside the browser*, so anyone can explore the data — drill from region down to a single barangay, or ask questions in plain English.
+
+It also makes one argument, and everything on the page is arranged to support it:
+
+> **The average senior high school runs 2.52 of 8 strands.** A learner in BARMM is roughly **6× more likely** than one in Region IV-A to attend a school running only one — so senior-high enrollment reflects what schools offer as much as what learners want.
+
+The full working is in [`analysis/strand-availability/`](analysis/strand-availability/) — notebook, reproducible script, and a writeup that states what the data cannot prove.
 
 [![CI](https://github.com/angelinetipa/aralite/actions/workflows/ci.yml/badge.svg)](https://github.com/angelinetipa/aralite/actions/workflows/ci.yml)
 
@@ -28,8 +34,10 @@ The dashboard takes a moment on first load while the SQL engine boots in your br
 
 ## Features
 
-- **One-look dashboard** — total learners, the Grade 6→7 drop-off, gender balance, senior-high strand enrollment (and by gender), public vs private split, what schools offer, and enrollment by region.
-- **Location filters** — five cascading levels (Region → Province → Division → Municipality → Barangay) drive every chart and stat at once.
+- **The finding first** — the dashboard opens with the claim stated in one sentence, benchmarked against the national figure, with its caveat attached. Filter to any region and it rewrites itself.
+- **Evidence, then context** — two charts support the finding directly. Six more describing the dataset sit behind a toggle, closed by default, so the page reads as an argument rather than a wall.
+- **Every scoped number carries its national equivalent.** A figure with nothing to compare it against is not a finding.
+- **One filter for everything** — five cascading levels (Region → Province → Division → Municipality → Barangay) plus school search, in a single bar, driving every chart, stat, and school result at once.
 - **Key findings** — plain-language insights calculated from the data, updating with the filter.
 - **Ask the data** — type a question in plain English; your own AI key (Groq or Gemini) writes the SQL, which runs read-only in the browser. The SQL is shown for trust.
 - **Admin page** — a separate `/admin` area to upload, clean, publish, and remove datasets.
@@ -123,19 +131,26 @@ aralite/
 │   ├── pages/
 │   │   ├── DashboardPage.tsx   # public view, composes every section
 │   │   └── AdminPage.tsx       # upload, clean, publish, remove datasets
-│   ├── components/             # one file per section — NavHeader, IntroPanel,
-│   │                           # FilterBar, StatCards, InsightsSection, seven
-│   │                           # chart sections, AskSection, DataNote, Spinner
+│   ├── components/             # StorySection (the finding), AvailabilitySection
+│   │                           # (the evidence), FilterBar, SchoolPanel, StatCards,
+│   │                           # InsightsSection, chart sections, AskSection,
+│   │                           # DataNote, NavHeader, IntroPanel, Spinner
 │   ├── lib/
 │   │   ├── db.ts               # DuckDB setup + upload reshaping
-│   │   ├── queries.ts          # all SQL lives here
+│   │   ├── queries.ts          # all SQL lives here — describes the dataset
+│   │   ├── story.ts            # the finding layer — every figure paired with national
+│   │   ├── metrics.ts          # pure calculations, no SQL and no React
+│   │   ├── metrics.test.ts     # 15 tests asserting real DepEd numbers
 │   │   ├── insights.ts         # auto-calculated findings
+│   │   ├── format.ts           # one adaptive number formatter for every axis
 │   │   ├── cleaning.ts         # browser cleaning rules
 │   │   ├── cleaning.test.ts    # unit tests for those rules
 │   │   ├── ai.ts               # natural language → SQL (BYOK)
 │   │   └── filters.ts          # shared location-filter logic
 │   └── constants/theme.ts      # colors + design tokens
+├── analysis/strand-availability/   # the finding: notebook, script, charts, writeup
 ├── docs/LEARNING.md            # plain-language walkthrough of the whole project
+├── docs/WALKTHROUGH.md         # every file explained, with the question it answers
 └── .github/workflows/ci.yml    # lint + type-check + test on push to main and every PR
 ```
 
@@ -194,7 +209,9 @@ npm run build   # type-check + production build
 | I want to change... | Edit this file |
 |---|---|
 | Colors, spacing, card styles | `src/constants/theme.ts` |
-| Any SQL query | `src/lib/queries.ts` |
+| Any SQL query describing the dataset | `src/lib/queries.ts` |
+| The finding's queries and its national benchmark | `src/lib/story.ts` |
+| A calculation used by more than one component | `src/lib/metrics.ts` (then update `metrics.test.ts`) |
 | The auto-generated findings and their thresholds | `src/lib/insights.ts` |
 | Cleaning rules for uploaded files | `src/lib/cleaning.ts` (then update `cleaning.test.ts`) |
 | Cleaning rules for the source dataset | `pipeline/clean.py` |
@@ -216,14 +233,18 @@ Being direct about what this data cannot answer:
 
 - **It is a one-time snapshot**, not a live feed. One school year, so no trends over time.
 - **The grain is the school, not the learner.** Aralite cannot follow individual students or explain why anyone left.
-- **The Grade 6→7 gap is not a dropout rate.** It is the difference between two grade levels within a single year, which can reflect migration, cohort size, or reporting differences as much as anything else. A signal worth investigating, not a measurement.
+- **The largest grade-to-grade gap is not a dropout rate.** It is the difference between two grade levels within a single year, which can reflect migration, cohort size, or reporting differences as much as anything else. A signal worth investigating, not a measurement. The dashboard finds whichever gap is largest for your filter rather than assuming it is always Grade 6→7 — in BARMM it is Grade 1→2.
+- **Strand availability is inferred, not stated.** The source file has no "strands offered" column, so a school counts as running a strand only if someone is enrolled in it. 222 schools DepEd classifies as senior-high-offering report zero enrollment and are excluded — 1.7% of senior high schools.
+- **Enrollment is not preference.** A learner can only enrol in a strand their school runs, so these numbers mix what learners wanted with what was available. This data cannot separate the two; it can only show they are entangled.
 - **Uploaded datasets live in browser memory only** and disappear on refresh, by design.
 
 For the live-pipeline version of this idea — data that collects itself on a schedule, with validation and a run log — see [Presyo](https://github.com/angelinetipa/presyo), the sibling project to this one.
 
 ## Honest notes
 
-**Test coverage is thin.** Ten unit tests, all in `cleaning.test.ts`, covering the browser cleaning rules. `queries.ts` and `insights.ts` have none — and those are where a wrong number would actually reach someone. That is the next thing I would add.
+**The bugs that mattered here were all wrong numbers, not crashes.** A chart sorted by raw headcount while its bars showed percentages, and generated a confident, false headline. A subtitle hardcoded Grade 6→7 while the insights panel searched for the real largest gap, so the two named different grades for the same region. An axis formatter rounded 50k, 100k and 150k all to "0.1M". Every one rendered perfectly and every one passed the existing tests.
+
+So the 25 tests now assert **numbers**, using real DepEd figures verified three ways — in the notebook, in the app's own SQL, and in an Excel sheet anyone can rerun. Each test is a bug that actually shipped. `queries.ts` still has no direct coverage, because testing it needs DuckDB in the test environment; the calculations it feeds were pulled into `metrics.ts`, which is tested.
 
 **The cleaned street address column is unused.** `clean.py` builds `Street Address Clean` for future mapping or geocoding work. Nothing reads it yet.
 
