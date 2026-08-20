@@ -1,24 +1,27 @@
 // src/pages/DashboardPage.tsx
-// The public, view-only dashboard. All data management lives at /admin.
+// The public dashboard. All data management lives at /admin.
 //
-// Order is an argument, not a layout. The page runs:
-//   scene    — what this is, and where the learners are
-//   finding  — the one claim this dashboard makes, stated in a sentence
-//   evidence — the chart that supports it, benchmarked nationally
-//   context  — everything else, for a reader who wants to look around
+// Order is an argument, not a layout:
+//   scene    — one filter, and what it currently selects
+//   finding  — the single claim this dashboard makes, stated in a sentence
+//   evidence — the two charts that support it, benchmarked nationally
+//   context  — everything else, muted, for a reader looking around
+//   tools    — ask the data yourself
 //   limits   — what none of it can tell you
-// Charts used to sit in a flat stack, which left the reader to work out
-// the point. Stating it first turns the rest into support.
+//
+// The tools sit at the BOTTOM on purpose. Above the finding they compete
+// with it for attention, and a visitor who lands here should meet the
+// argument first. Anyone who wants to dig has already scrolled.
 
 import { useEffect, useState } from 'react';
 import { getDB } from '../lib/db';
-import { Link } from 'react-router-dom';
 import { type Filters, scopeLabel } from '../lib/filters';
 import { colors } from '../constants/theme';
 import NavHeader from '../components/NavHeader';
 import Spinner from '../components/Spinner';
 import IntroPanel from '../components/IntroPanel';
 import FilterBar from '../components/FilterBar';
+import SchoolPanel from '../components/SchoolPanel';
 import StatCards from '../components/StatCards';
 import StorySection from '../components/StorySection';
 import AvailabilitySection from '../components/AvailabilitySection';
@@ -30,6 +33,7 @@ import SectorSection from '../components/SectorSection';
 import RegionsSection from '../components/RegionsSection';
 import StrandGenderSection from '../components/StrandGenderSection';
 import OfferingSection from '../components/OfferingSection';
+import AskSection from '../components/AskSection';
 import DataNote from '../components/DataNote';
 
 function ActLabel({ kicker, title, blurb }: { kicker: string; title: string; blurb?: string }) {
@@ -55,18 +59,21 @@ function ActLabel({ kicker, title, blurb }: { kicker: string; title: string; blu
 
 export default function DashboardPage() {
   const [filters, setFilters] = useState<Filters>({});
+  const [search, setSearch] = useState('');
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     getDB().then(() => setReady(true)).catch(() => setReady(true));
   }, []);
 
+  const scope = scopeLabel(filters);
+
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem 2rem', color: colors.ink }}>
       <NavHeader />
 
-      {/* Context comes before the spinner: a visitor can read what this is
-          while DuckDB and the parquet files are still loading. */}
+      {/* Context before the spinner: a visitor can read what this is while
+          DuckDB and the parquet files are still loading. */}
       <div style={{ marginTop: '1.5rem' }}>
         <IntroPanel />
       </div>
@@ -75,11 +82,22 @@ export default function DashboardPage() {
 
       <div style={{ display: ready ? 'block' : 'none' }}>
         {/* ---- Scene ---------------------------------------------------- */}
-        <FilterBar filters={filters} onChange={setFilters} />
+        <FilterBar
+          filters={filters}
+          onChange={setFilters}
+          search={search}
+          onSearch={setSearch}
+        />
 
         <p style={{ fontSize: 14, color: colors.inkSoft, margin: '0 0 20px' }}>
-          Showing data for <strong style={{ color: colors.ink }}>{scopeLabel(filters)}</strong>
+          Showing data for <strong style={{ color: colors.ink }}>{scope}</strong>
+          {search.trim() && (
+            <> · schools matching <strong style={{ color: colors.ink }}>“{search.trim()}”</strong></>
+          )}
         </p>
+
+        {/* Appears only when the filter or search actually selects something. */}
+        <SchoolPanel filters={filters} search={search} />
 
         <StatCards filters={filters} />
 
@@ -99,7 +117,7 @@ export default function DashboardPage() {
         <ActLabel
           kicker="Context"
           title="The rest of the picture"
-          blurb="Everything below follows your filter. These describe the dataset rather than argue the finding above — useful for looking around, not for settling the question."
+          blurb={`Everything below follows your filter — currently ${scope}. These describe the dataset rather than argue the finding above: useful for looking around, not for settling the question.`}
         />
 
         <div
@@ -123,25 +141,15 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* The tools live on /explore so they do not compete with the
-            finding above. A pointer, not the tools themselves. */}
-        <div
-          style={{
-            margin: '30px 0 4px', padding: '1.1rem 1.3rem',
-            border: `1px dashed ${colors.line}`, borderRadius: 16,
-          }}
-        >
-          <p style={{ margin: 0, fontSize: 14, color: colors.inkSoft, lineHeight: 1.65 }}>
-            <strong style={{ color: colors.ink }}>Want to check something yourself?</strong>{' '}
-            Look up any of 60,167 schools by name, or ask a question in plain English and watch
-            the SQL it writes —{' '}
-            <Link to="/explore" style={{ color: colors.blue, fontWeight: 600 }}>
-              go to Explore →
-            </Link>
-          </p>
-        </div>
+        {/* ---- Tools ------------------------------------------------------ */}
+        <ActLabel
+          kicker="Ask it yourself"
+          title="Put a question to the data"
+          blurb="Type a question in plain English and watch the SQL it writes, then the result. This one queries the whole dataset and ignores the filter above — the SQL it shows you is the exact scope it used."
+        />
+        <AskSection />
 
-        {/* ---- Limits ---------------------------------------------------- */}
+        {/* ---- Limits ----------------------------------------------------- */}
         <DataNote />
       </div>
 

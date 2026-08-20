@@ -1,99 +1,61 @@
-// src/components/FinderSection.tsx
-// School Finder: search 60,000 schools by name/ID + narrow with five
-// location dropdowns. Click a result to see that school's full profile.
-// This is what makes Aralite a TOOL people use, not just a dashboard.
+// src/components/SchoolPanel.tsx
+// School results for whatever the single FilterBar currently selects.
+//
+// This was FinderSection, which carried its own five dropdowns and its
+// own filter state — a second filter that silently disagreed with the
+// dashboard's. All of that is gone. It now receives filters and search
+// text as props, so it can only ever show the same scope as the charts.
+//
+// Renders nothing until there is something to show, so it stays out of
+// the way of the finding until a visitor actually looks for a school.
 
 import { useEffect, useState } from 'react';
-import { searchSchools, getSchoolProfile, getLevelOptions,
-  type SchoolHit, type SchoolProfile,
+import {
+  searchSchools, getSchoolProfile, type SchoolHit, type SchoolProfile,
 } from '../lib/queries';
-import { type Filters, LEVELS, type Level } from '../lib/filters';
+import { type Filters } from '../lib/filters';
 import { colors, clay } from '../constants/theme';
 import { Card } from './ui';
 
-const LABEL: Record<Level, string> = { region:'Region', province:'Province', division:'Division', municipality:'Municipality', barangay:'Barangay' };
+function Metric({ label, value, c }: { label: string; value: string; c: string }) {
+  return (
+    <div style={{ flex: 1, minWidth: 90 }}>
+      <div style={{ fontSize: 12, color: colors.inkSoft }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 800, color: c }}>{value}</div>
+    </div>
+  );
+}
 
-export default function FinderSection() {
-  const [filters, setFilters] = useState<Filters>({});
-  const [search, setSearch] = useState('');
-  const [options, setOptions] = useState<Record<string, string[]>>({});
+export default function SchoolPanel({
+  filters, search,
+}: { filters: Filters; search: string }) {
   const [hits, setHits] = useState<SchoolHit[]>([]);
   const [profile, setProfile] = useState<SchoolProfile | null>(null);
 
-  // Load each dropdown's options, narrowed by the filters above it.
-  useEffect(() => {
-    LEVELS.forEach((lvl) => {
-      getLevelOptions(lvl, filters)
-        .then((opts) => setOptions((o) => ({ ...o, [lvl]: opts })))
-        .catch(() => {});
-    });
-  }, [filters]);
-
-  // Run the search whenever filters or text change.
   useEffect(() => {
     const hasAny = search.trim() || Object.values(filters).some(Boolean);
     if (!hasAny) { setHits([]); return; }
     searchSchools(filters, search).then(setHits).catch(() => setHits([]));
   }, [filters, search]);
 
-  function setFilter(lvl: Level, value: string) {
-    const idx = LEVELS.indexOf(lvl);
-    const next: Filters = { ...filters, [lvl]: value || undefined };
-    LEVELS.slice(idx + 1).forEach((l) => { delete next[l]; });
-    setFilters(next);
-  }
-
-  const inputStyle = {
-    padding: '9px 12px', borderRadius: 10, fontSize: 14,
-    border: '1px solid rgba(0,0,0,0.1)', background: colors.surface, width: '100%',
-  };
+  // Only appears once the visitor has actually narrowed to something.
+  if (hits.length === 0) return null;
 
   return (
     <Card
-      title="Find a school"
+      title={`${hits.length}${hits.length === 50 ? '+' : ''} school${hits.length === 1 ? '' : 's'} match your filters`}
       accent={colors.blue}
-      subtitle="Search any of 60,000+ schools by name or ID, or narrow by location."
+      subtitle={
+        hits.length === 50
+          ? 'Showing the first 50. Narrow the filters above, or search by name, to see fewer.'
+          : 'Click any school to see its full enrollment profile.'
+      }
     >
-      {/* Search bar */}
-      <input
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search school name or ID…"
-        style={{ ...inputStyle, marginBottom: 12 }}
-      />
-
-      {/* Five location dropdowns */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-        gap: 10, marginBottom: 16,
-      }}>
-        {LEVELS.map((lvl) => (
-            <select
-              key={lvl}
-              value={filters[lvl] ?? ''}
-              onChange={(e) => setFilter(lvl, e.target.value)}
-              style={inputStyle}
-            >
-              <option value="">{LABEL[lvl]} (all)</option>
-              {(options[lvl] ?? []).map((o) => (
-                <option key={o} value={o}>{o}</option>
-              ))}
-            </select>
-        ))}
-      </div>
-
-      {/* Results */}
-      {hits.length > 0 && (
-        <div style={{ fontSize: 13, color: colors.inkSoft, marginBottom: 8 }}>
-          Showing top {hits.length} {hits.length === 50 ? '(narrow to see more)' : ''}
-        </div>
-      )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 420, overflowY: 'auto' }}>
         {hits.map((h) => (
           <button
             key={h.id}
-            onClick={() => getSchoolProfile(h.id).then(setProfile)}
+            onClick={() => getSchoolProfile(h.id).then(setProfile).catch(() => { })}
             style={{
               ...clay.card, textAlign: 'left', cursor: 'pointer', border: 'none',
               padding: '10px 14px', display: 'flex', justifyContent: 'space-between',
@@ -113,7 +75,6 @@ export default function FinderSection() {
         ))}
       </div>
 
-      {/* Profile modal */}
       {profile && (
         <div
           onClick={() => setProfile(null)}
@@ -131,11 +92,17 @@ export default function FinderSection() {
               <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>
                 {profile.info['School Name']}
               </h3>
-              <button onClick={() => setProfile(null)} style={{ cursor: 'pointer', border: 'none', background: 'none', fontSize: 22 }}>×</button>
+              <button
+                onClick={() => setProfile(null)}
+                style={{ cursor: 'pointer', border: 'none', background: 'none', fontSize: 22 }}
+              >
+                ×
+              </button>
             </div>
 
             <p style={{ color: colors.inkSoft, fontSize: 13, margin: '4px 0 16px' }}>
-              {profile.info['Barangay']}, {profile.info['Municipality']}, {profile.info['Province']} · {profile.info['Sector']} · {profile.info['School Type']}
+              {profile.info['Barangay']}, {profile.info['Municipality']}, {profile.info['Province']}
+              {' · '}{profile.info['Sector']} · {profile.info['School Type']}
             </p>
 
             <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
@@ -161,14 +128,5 @@ export default function FinderSection() {
         </div>
       )}
     </Card>
-  );
-}
-
-function Metric({ label, value, c }: { label: string; value: string; c: string }) {
-  return (
-    <div style={{ flex: 1, minWidth: 90 }}>
-      <div style={{ fontSize: 12, color: colors.inkSoft }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 800, color: c }}>{value}</div>
-    </div>
   );
 }
