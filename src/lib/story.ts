@@ -92,16 +92,23 @@ export type AvailabilityRegionRow = {
   avgStrands: number;
   pctLearnersOneStrand: number;
   learners: number;
+  schools: number;
 };
 
 /**
  * Every region, always national in scope — this chart is the benchmark,
  * so filtering it to one region would defeat its purpose. The active
  * filter highlights a bar instead of removing the others.
+ *
+ * `schools` is returned so the recommendation can set aside groups too
+ * small to rank. PSO — Philippine Schools Overseas, 20 schools — is not
+ * a region and its averages are not a pattern, but nothing in the
+ * numbers themselves says so. The size has to travel with the figures.
  */
 export async function getAvailabilityByRegion(): Promise<AvailabilityRegionRow[]> {
   const rows = await query<{
-    region: string; avg_strands: number; learners: bigint; one_learners: bigint;
+    region: string; avg_strands: number; schools: bigint;
+    learners: bigint; one_learners: bigint;
   }>(`
     WITH per_school AS (
       SELECT e."BEIS School ID" AS id,
@@ -114,6 +121,7 @@ export async function getAvailabilityByRegion(): Promise<AvailabilityRegionRow[]
       GROUP BY 1, 2
     )
     SELECT region,
+           COUNT(*)      AS schools,
            AVG(strands)  AS avg_strands,
            SUM(learners) AS learners,
            SUM(CASE WHEN strands = 1 THEN learners ELSE 0 END) AS one_learners
@@ -131,6 +139,7 @@ export async function getAvailabilityByRegion(): Promise<AvailabilityRegionRow[]
       region: r.region,
       avgStrands: Number(r.avg_strands),
       learners,
+      schools: Number(r.schools),
       pctLearnersOneStrand: learners ? (Number(r.one_learners) / learners) * 100 : 0,
     };
   });

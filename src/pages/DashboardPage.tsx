@@ -5,15 +5,22 @@
 //   scene    — one filter, and what it currently selects
 //   finding  — the single claim this dashboard makes, in a sentence
 //   evidence — the two charts that support it, benchmarked nationally
+//   so what  — the only part that says what to do about any of it
 //   context  — everything else, COLLAPSED by default
 //   tools    — ask the data yourself
 //   limits   — what none of it can tell you
 //
 // The context block starts closed. Open, it made the page a wall of
 // charts and left the reader to work out which mattered; closed, the
-// default view is filter -> finding -> evidence, and the rest is an
-// appendix for anyone who wants it. It also means six chart queries
-// never run unless someone asks for them.
+// default view is filter -> finding -> evidence -> so what, and the rest
+// is an appendix for anyone who wants it. It also means six chart
+// queries never run unless someone asks for them.
+//
+// "So what" sits directly after the evidence and OUTSIDE that toggle on
+// purpose. It used to live only in the GitHub writeup, so a visitor got
+// the problem and no recommendation — and the argument here is that the
+// obvious recommendation is the wrong one. Behind a toggle it would be
+// invisible again.
 //
 // Tools sit at the BOTTOM on purpose. Above the finding they compete
 // with it, and a visitor landing here should meet the argument first.
@@ -30,6 +37,7 @@ import SchoolPanel from '../components/SchoolPanel';
 import StatCards from '../components/StatCards';
 import StorySection from '../components/StorySection';
 import AvailabilitySection from '../components/AvailabilitySection';
+import RecommendationSection from '../components/RecommendationSection';
 import InsightsSection from '../components/InsightsSection';
 import DropoffSection from '../components/DropoffSection';
 import StrandsSection from '../components/StrandsSection';
@@ -116,6 +124,14 @@ export default function DashboardPage() {
         />
         <AvailabilitySection filters={filters} metric="avgStrands" />
         <AvailabilitySection filters={filters} metric="pctLearnersOneStrand" />
+
+        {/* ---- So what ---------------------------------------------------- */}
+        <ActLabel
+          kicker="So what"
+          title="Where widening strand offerings would matter most"
+          blurb="The regions are calculated from the two charts above, not chosen by hand — and the same panel says plainly what this data cannot decide."
+        />
+        <RecommendationSection filters={filters} />
 
         {/* ---- Context, closed by default -------------------------------- */}
         <div style={{ margin: '38px 0 0' }}>
