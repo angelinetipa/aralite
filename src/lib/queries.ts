@@ -20,15 +20,29 @@ function where(f: Filters, extra: string[] = []): string {
 
 // ---- headline numbers -------------------------------------------------
 
+// Only the five figures StatCards actually draws.
+//
+// This used to return eleven. The other six — publicPct, privatePct,
+// male, female, malePct, femalePct — were left behind when the
+// Male/Female card was removed, and nothing has read them since. They
+// were not free: they were fed by two extra SQL queries that ran on
+// every filter change, in a dashboard where the whole point is that the
+// filter is fast.
+//
+// privatePct was also WRONG, and would have shipped the moment anyone
+// used it. It was 100 - publicPct, but this dataset has four sectors,
+// not two: Public, Private, SUCs/LUCs, and PSO. "Everything that is not
+// public" is 14.24%; Private alone is 13.78%. A dead field cannot lie to
+// anyone, but it sits there waiting to. SectorSection draws all four
+// sectors properly from getBySector — that is the honest version, and it
+// already exists.
 export type Headline = {
-  total: number; schools: number; shs: number; topRegion: string;
-  publicPct: number; privatePct: number;
-  male: number; female: number; malePct: number; femalePct: number;
-  avgPerSchool: number;
+  total: number; schools: number; shs: number;
+  topRegion: string; avgPerSchool: number;
 };
 
 export async function getHeadline(f: Filters): Promise<Headline> {
-  const [tot, sch, shs, top, sector, gender] = await Promise.all([
+  const [tot, sch, shs, top] = await Promise.all([
     query<{ v: bigint }>(`SELECT SUM(e.enrollment) v ${JOINED} ${where(f)}`),
     query<{ v: bigint }>(`SELECT COUNT(*) v FROM schools s ${where(f)}`),
     query<{ v: bigint }>(`SELECT SUM(e.enrollment) v ${JOINED} ${where(f, ["e.grade IN ('G11','G12')"])}`),
@@ -36,26 +50,13 @@ export async function getHeadline(f: Filters): Promise<Headline> {
       SELECT s.Region, SUM(e.enrollment) t ${JOINED} ${where(f)}
       GROUP BY s.Region ORDER BY t DESC LIMIT 1
     `),
-    query<{ sector: string; v: bigint }>(`
-      SELECT s.Sector sector, SUM(e.enrollment) v ${JOINED} ${where(f)} GROUP BY s.Sector
-    `),
-    query<{ gender: string; v: bigint }>(`
-      SELECT e.gender, SUM(e.enrollment) v ${JOINED} ${where(f)} GROUP BY e.gender
-    `),
   ]);
   const total = Number(tot[0]?.v ?? 0);
   const schools = Number(sch[0]?.v ?? 0);
-  const pub = Number(sector.find((r) => r.sector === 'Public')?.v ?? 0);
-  const male = Number(gender.find((r) => r.gender === 'Male')?.v ?? 0);
-  const female = Number(gender.find((r) => r.gender === 'Female')?.v ?? 0);
-  const publicPct = total ? Math.round((pub / total) * 100) : 0;
-  const malePct = male + female ? Math.round((male / (male + female)) * 100) : 0;
   return {
     total, schools,
     shs: Number(shs[0]?.v ?? 0),
     topRegion: top[0]?.Region ?? '—',
-    publicPct, privatePct: 100 - publicPct,
-    male, female, malePct, femalePct: 100 - malePct,
     avgPerSchool: schools ? Math.round(total / schools) : 0,
   };
 }

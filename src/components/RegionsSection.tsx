@@ -1,6 +1,8 @@
 // src/components/RegionsSection.tsx
-// All 18 regions ranked. interval={0} + enough height so EVERY label
-// shows (no alternating skips). Clicking a bar filters the dashboard.
+// All 18 bars ranked: the country's 17 regions plus PSO, Philippine
+// Schools Overseas, which DepEd files in the Region column but which is
+// not a region. interval={0} + enough height so EVERY label shows (no
+// alternating skips). Clicking a bar filters the dashboard.
 
 import { useEffect, useState } from 'react';
 import {

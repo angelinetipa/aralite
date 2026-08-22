@@ -2,8 +2,8 @@
 // Five headline numbers for the current filter.
 //
 // "Male / Female" was removed. It was recomputing correctly, but the
-// real spread across all 18 regions is 49%-52% — so it printed 51% / 49%
-// almost everywhere and looked frozen. A card that shows the same value
+// real spread across the 17 regions is 48.6% to 51.7% male — so it
+// printed 51% / 49% almost everywhere and looked frozen. A card that shows the same value
 // no matter what you select is not a statistic, it is decoration, and it
 // was taking the most valuable space on the page. The gender breakdown
 // is still on the page in full, as its own chart, where the small
