@@ -68,9 +68,22 @@ export async function getInsights(f: Filters): Promise<Insight[]> {
   // 3. Largest gap between two consecutive grade levels.
   //    NOT a dropout rate — see the caveat in the detail text. These are
   //    two different groups of students counted in the same year.
+  //
+  //    KINDERGARTEN IS INCLUDED, and that is the fix. This is the same
+  //    bug the project already killed once, hiding somewhere new: both
+  //    panels call the shared largestGap(), but they were handed
+  //    DIFFERENT ROWS. DropoffSection reads getByGrade(), which starts
+  //    at K; this query started at G1. One shared function cannot keep
+  //    two panels in step if their inputs disagree. In 7 of 1,654
+  //    municipalities the two named different grades for the same
+  //    filter. Both now start at K.
+  //
+  //    Non-graded rows (Elem NG, JHS NG) stay out on purpose. They hold
+  //    no position in the grade sequence, so a "gap" into or out of them
+  //    would not mean anything.
   const grades = await query<{ grade: string; total: bigint }>(`
     SELECT e.grade, SUM(e.enrollment) total ${JOIN}
-    ${where(f, ["e.grade IN ('G1','G2','G3','G4','G5','G6','G7','G8','G9','G10','G11','G12')"])}
+    ${where(f, ["e.grade IN ('K','G1','G2','G3','G4','G5','G6','G7','G8','G9','G10','G11','G12')"])}
     GROUP BY e.grade
   `);
   const byGrade = GRADE_ORDER

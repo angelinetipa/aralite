@@ -35,6 +35,10 @@ export type Gap = {
  * This is not a dropout rate and the wording that surrounds it must
  * keep saying so: these are two different groups of learners counted in
  * the same school year.
+ *
+ * One function is not enough on its own. Both callers must also pass the
+ * SAME grades — insights.ts once started at G1 while DropoffSection
+ * started at K, and the two panels disagreed again. See insights.ts.
  */
 export function largestGap(rows: GradeTotal[]): Gap | null {
   const present = GRADE_ORDER
@@ -110,4 +114,67 @@ export function sortByMetric<T>(
     worst === 'lowest'
       ? Number(a[metric]) - Number(b[metric])
       : Number(b[metric]) - Number(a[metric]));
+}
+
+// ---- which regions to act on first ------------------------------------
+
+export type RegionAvailability = {
+  region: string;
+  avgStrands: number;
+  pctLearnersOneStrand: number;
+  schools: number;
+};
+
+export type Priority = {
+  regions: string[];    // the answer, worst first
+  excluded: string[];   // regions set aside as too small to rank
+  depth: number;        // how far down each ranking we looked
+  minSchools: number;
+};
+
+/**
+ * The regions that come out worst on BOTH availability measures.
+ *
+ * A recommendation needs a rule, not a hand-picked list, or it is just
+ * an opinion wearing a number. The rule: take the worst `depth` regions
+ * by average strands per school, take the worst `depth` by share of
+ * learners in a single-strand school, and keep only the regions in both
+ * lists. Two independent rankings agreeing is a far weaker claim to
+ * argue with than either ranking alone.
+ *
+ * Small regions are set aside first. PSO — Philippine Schools Overseas,
+ * 20 schools — sits fourth-worst on average strands purely because it is
+ * tiny, and letting it in pushes Region VIII out of the answer. That is
+ * not a finding, it is a sample size. The writeup says the same thing in
+ * words; this makes the product say it in code.
+ *
+ * Returns the regions ordered by the learner measure, worst first: the
+ * share of learners with no alternative is the sharper of the two, and
+ * the one the dashboard leads with.
+ */
+export function priorityRegions(
+  rows: RegionAvailability[],
+  depth = 4,
+  minSchools = 50,
+): Priority {
+  const big = rows.filter((r) => r.schools >= minSchools);
+  const excluded = rows
+    .filter((r) => r.schools < minSchools)
+    .map((r) => r.region);
+
+  const byStrands = sortByMetric(big, 'avgStrands', 'lowest')
+    .slice(0, depth)
+    .map((r) => r.region);
+
+  const byLearners = sortByMetric(big, 'pctLearnersOneStrand', 'highest')
+    .slice(0, depth);
+
+  return {
+    regions: byLearners
+      .filter((r) => byStrands.includes(r.region))
+      .map((r) => r.region),
+    excluded,
+    depth,
+    minSchools,
+  };
 }
