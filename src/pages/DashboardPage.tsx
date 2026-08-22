@@ -71,7 +71,6 @@ function ActLabel({ kicker, title, blurb }: { kicker: string; title: string; blu
 
 export default function DashboardPage() {
   const [filters, setFilters] = useState<Filters>({});
-  const [search, setSearch] = useState('');
   const [showContext, setShowContext] = useState(false);
   const [ready, setReady] = useState(false);
 
@@ -95,21 +94,13 @@ export default function DashboardPage() {
 
       <div style={{ display: ready ? 'block' : 'none' }}>
         {/* ---- Scene ---------------------------------------------------- */}
-        <FilterBar
-          filters={filters}
-          onChange={setFilters}
-          search={search}
-          onSearch={setSearch}
-        />
+        <FilterBar filters={filters} onChange={setFilters} />
 
         <p style={{ fontSize: 14, color: colors.inkSoft, margin: '0 0 20px' }}>
           Showing data for <strong style={{ color: colors.ink }}>{scope}</strong>
-          {search.trim() && (
-            <> · schools matching <strong style={{ color: colors.ink }}>“{search.trim()}”</strong></>
-          )}
         </p>
 
-        <SchoolPanel filters={filters} search={search} />
+        <SchoolPanel filters={filters} />
 
         <StatCards filters={filters} />
 

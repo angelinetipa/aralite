@@ -134,32 +134,54 @@ export async function getLevelOptions(level: Level, f: Filters): Promise<string[
   return rows.map((r) => r.v).filter(Boolean);
 }
 
-// ---- school finder (specific school lookup) ---------------------------
+// ---- schools in scope --------------------------------------------------
+//
+// There was a name/ID search box here. It was removed rather than
+// repaired. Two things were wrong with it and only one was fixable
+// cheaply: it searched "School Name" and ignored "School Name Clean",
+// so typing "elementary school" missed 17,494 schools recorded as "ES";
+// and it ranked matches by enrollment, so a small school was
+// unfindable by name at all. A search box that quietly hides the thing
+// you searched for is worse than no search box, because the reader
+// concludes the school is not in the data.
+//
+// The location filter already reaches a single barangay, which is a
+// slower but honest way to the same school. What is left is a plain
+// list of what the current filter selects.
 
 export type SchoolHit = {
   id: string; name: string; region: string;
   municipality: string; sector: string; total: number;
 };
 
-export async function searchSchools(f: Filters, search: string): Promise<SchoolHit[]> {
-  const extra: string[] = [];
-  if (search.trim()) {
-    const s = search.trim().replace(/'/g, "''");
-    extra.push(`(LOWER("School Name") LIKE '%${s.toLowerCase()}%' OR CAST("BEIS School ID" AS VARCHAR) LIKE '${s}%')`);
-  }
-  const rows = await query<{
-    id: number; name: string; region: string;
-    municipality: string; sector: string; total: number;
-  }>(`
-    SELECT "BEIS School ID" id, "School Name" name, "Region" region,
-           "Municipality" municipality, "Sector" sector, "Total Enrollment" total
-    FROM schools s ${where(f, extra)}
-    ORDER BY "Total Enrollment" DESC LIMIT 50
-  `);
-  return rows.map((r) => ({
-    id: String(r.id), name: r.name, region: r.region,
-    municipality: r.municipality, sector: r.sector, total: Number(r.total),
-  }));
+// How many rows the panel renders. The TOTAL is returned alongside so
+// the heading can say "the 50 largest of 2,687" instead of "50+", which
+// told the reader nothing about whether narrowing would help.
+export const SCHOOLS_SHOWN = 50;
+
+export async function getSchools(
+  f: Filters,
+): Promise<{ hits: SchoolHit[]; total: number }> {
+  const scope = where(f);
+  const [rows, counted] = await Promise.all([
+    query<{
+      id: number; name: string; region: string;
+      municipality: string; sector: string; total: number;
+    }>(`
+      SELECT "BEIS School ID" id, "School Name" name, "Region" region,
+             "Municipality" municipality, "Sector" sector, "Total Enrollment" total
+      FROM schools s ${scope}
+      ORDER BY "Total Enrollment" DESC LIMIT ${SCHOOLS_SHOWN}
+    `),
+    query<{ v: bigint }>(`SELECT COUNT(*) v FROM schools s ${scope}`),
+  ]);
+  return {
+    hits: rows.map((r) => ({
+      id: String(r.id), name: r.name, region: r.region,
+      municipality: r.municipality, sector: r.sector, total: Number(r.total),
+    })),
+    total: Number(counted[0]?.v ?? 0),
+  };
 }
 
 export type SchoolProfile = {
@@ -180,7 +202,7 @@ export async function getSchoolProfile(id: string): Promise<SchoolProfile> {
     SELECT e.grade, e.gender, SUM(e.enrollment) total FROM enrollment e
     WHERE CAST(e."BEIS School ID" AS VARCHAR) = '${esc}' GROUP BY e.grade, e.gender
   `);
-  const order = ['K','G1','G2','G3','G4','G5','G6','G7','G8','G9','G10','G11','G12','Elem NG','JHS NG'];
+  const order = ['K', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'G8', 'G9', 'G10', 'G11', 'G12', 'Elem NG', 'JHS NG'];
   const byGrade = order.map((gr) => ({
     grade: gr,
     total: g.filter((r) => r.grade === gr).reduce((a, r) => a + Number(r.total), 0),

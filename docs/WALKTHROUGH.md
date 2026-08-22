@@ -116,7 +116,7 @@ The ones with something extra:
 
 `analysis/strand-availability/` — notebook, script, three charts, three CSVs, writeup.
 
-**The finding:** the average senior high school runs **2.52 of 8 strands**. A learner in **BARMM** is about **6× more likely** than one in **Region IV-A** to attend a school running only one.
+**The finding:** the average senior high school runs **2.5 of the 8 tracks and strands**. A learner in **BARMM** is about **6× more likely** than one in **Region IV-A** to attend a school running only one.
 
 **The correction that matters:** 28.5% of schools run one strand, but only **8.6% of learners** attend them — those schools average 98 learners against 420 elsewhere. Leading with 28.5% would have overstated it badly.
 

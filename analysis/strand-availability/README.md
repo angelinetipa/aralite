@@ -24,7 +24,7 @@ I counted how many distinct senior-high strands each school runs, then aggregate
 
 ## Findings
 
-### 1. The average senior high school runs 2.5 of 8 possible strands
+### 1. The average senior high school runs 2.5 of the 8 tracks and strands on offer
 
 Nationally the figure is 2.52. It ranges from 1.97 in CARAGA to 3.11 in NCR. So "choosing a track" describes something quite different depending on where a learner lives — in the regions at the bottom of this list, the average school is running two strands, and a learner picks between them or leaves.
 

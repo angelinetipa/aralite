@@ -7,7 +7,9 @@
 // can never drift apart.
 //
 // Deliberately NOT filtered. Every other chart narrows when you pick a
-// region; this one always shows all 18, because its job is to be the
+// region; this one always shows all 18 bars — the country's 17 regions
+// plus PSO, Philippine Schools Overseas, which DepEd files in the same
+// column but which is not a region — because its job is to be the
 // benchmark. Filtering it to a single bar would leave nothing to compare
 // against. The active filter outlines a bar instead of removing the rest.
 //
@@ -30,12 +32,12 @@ export type Metric = 'avgStrands' | 'pctLearnersOneStrand';
 // direction is bad — kept together so they cannot fall out of sync.
 const SPEC = {
   avgStrands: {
-    axis: 'Average strands a school runs (out of 8 possible)',
+    axis: 'Average tracks and strands a school runs (of 8)',
     max: 8,
     ticks: [0, 2, 4, 6, 8],
     format: (v: number) => v.toFixed(2),
     tickFormat: (v: number) => `${v}`,
-    tooltip: 'Average strands per school',
+    tooltip: 'Average tracks and strands per school',
     worseWhen: 'below' as const,
     sortAsc: true,          // fewest strands first — worst at the top
   },
@@ -94,11 +96,11 @@ export default function AvailabilitySection({
     { length: axisMax / 5 + 1 }, (_, i) => i * 5);
 
   const title = metric === 'avgStrands'
-    ? `The average senior high school runs ${nat.toFixed(1)} of 8 strands — in ${worst.region} it is closer to ${Math.round(worst.avgStrands)}`
+    ? `The average senior high school runs ${nat.toFixed(1)} of the 8 tracks and strands on offer — in ${worst.region} it is closer to ${Math.round(worst.avgStrands)}`
     : `A senior-high learner in ${worst.region} is ${(worst[metric] / best[metric]).toFixed(0)}× more likely than one in ${best.region} to attend a school running only one strand`;
 
   const subtitle = metric === 'avgStrands'
-    ? `Fewest strands first. Dashed line is the national figure, ${nat.toFixed(2)} — all 18 regions counted together.`
+    ? `Fewest first. Dashed line is the national figure, ${nat.toFixed(2)} — all 17 regions plus overseas schools, counted together.`
     : `Share of learners whose school runs a single strand. Dashed line is the national figure, ${nat.toFixed(1)}%.`;
 
   return (

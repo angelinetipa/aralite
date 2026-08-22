@@ -6,7 +6,7 @@ Aralite turns the Department of Education's raw enrollment file (60,167 schools,
 
 It also makes one argument, and everything on the page is arranged to support it:
 
-> **The average senior high school runs 2.52 of 8 strands.** A learner in BARMM is roughly **6× more likely** than one in Region IV-A to attend a school running only one — so senior-high enrollment reflects what schools offer as much as what learners want.
+> **The average senior high school runs 2.52 of the 8 tracks and strands on offer.** A learner in BARMM is roughly **6× more likely** than one in Region IV-A to attend a school running only one — so senior-high enrollment reflects what schools offer as much as what learners want.
 
 The full working is in [`analysis/strand-availability/`](analysis/strand-availability/) — notebook, reproducible script, and a writeup that states what the data cannot prove.
 

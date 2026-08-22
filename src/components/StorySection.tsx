@@ -67,7 +67,7 @@ export default function StorySection({ filters }: { filters: Filters }) {
   const worse = scope.pctLearnersOneStrand > national.pctLearnersOneStrand;
 
   const headline = isNational
-    ? `The average senior high school runs ${scope.avgStrands.toFixed(1)} of 8 strands`
+    ? `The average senior high school runs ${scope.avgStrands.toFixed(1)} of the 8 tracks and strands on offer`
     : `In ${label}, ${scope.pctLearnersOneStrand.toFixed(1)}% of senior-high learners attend a school running only one strand`;
 
   const body = isNational
@@ -122,7 +122,7 @@ export default function StorySection({ filters }: { filters: Filters }) {
       >
         <Figure
           value={scope.avgStrands.toFixed(2)}
-          label={isNational ? 'strands per school, of 8' : `strands per school · ${national.avgStrands.toFixed(2)} nationally`}
+          label={isNational ? 'tracks and strands per school, of 8' : `tracks and strands per school · ${national.avgStrands.toFixed(2)} nationally`}
         />
         <Figure
           value={`${scope.pctLearnersOneStrand.toFixed(1)}%`}
@@ -136,6 +136,10 @@ export default function StorySection({ filters }: { filters: Filters }) {
       </div>
 
       <Disclosure summary="What this does not say">
+        The eight are five academic strands (ABM, HUMSS, STEM, GAS, Pre-Baccalaureate
+        Maritime) and three whole tracks (TVL, Arts &amp; Design, Sports). They are counted
+        together because a learner picks one of the eight, whatever DepEd calls it.{' '}
+        <br />
         It does not measure preference. Enrollment records what learners took, not what they
         wanted, and this data cannot separate the two — it only shows they are entangled.
         Availability is inferred from enrollment, since the source file has no offerings

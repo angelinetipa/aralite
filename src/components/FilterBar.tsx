@@ -1,11 +1,14 @@
 // src/components/FilterBar.tsx
 // The single control for the whole dashboard.
 //
-// Five cascading location dropdowns plus a school search, in one bar.
-// The search used to live in a separate Finder with its OWN copy of the
-// five dropdowns and its own filter state — so the page had two filters
-// that did not know about each other. One control now drives everything:
+// Five cascading location dropdowns. One control drives everything:
 // the charts, the story, and the school list below.
+//
+// A school name/ID search used to sit in this bar. It was removed, not
+// repaired — it searched the raw name column and ranked by enrollment,
+// so it hid schools that were in the data and taught the reader they
+// were not there. See the note in queries.ts. Narrowing to a barangay
+// is slower and honest; the search box was fast and wrong.
 //
 // Picking a level clears every narrower level under it.
 
@@ -20,12 +23,10 @@ const LABEL: Record<Level, string> = {
 };
 
 export default function FilterBar({
-  filters, onChange, search, onSearch,
+  filters, onChange,
 }: {
   filters: Filters;
   onChange: (f: Filters) => void;
-  search: string;
-  onSearch: (s: string) => void;
 }) {
   const [options, setOptions] = useState<Record<string, string[]>>({});
 
@@ -44,7 +45,7 @@ export default function FilterBar({
     onChange(next);
   }
 
-  const anyActive = LEVELS.some((l) => filters[l]) || search.trim().length > 0;
+  const anyActive = LEVELS.some((l) => filters[l]);
 
   return (
     <div style={{
@@ -80,40 +81,26 @@ export default function FilterBar({
         ))}
       </div>
 
-      {/* Search sits inside the same bar, narrowed by the dropdowns above
-          it — not a second filter competing with them. */}
-      <div style={{
-        display: 'flex', gap: 10, alignItems: 'end',
-        marginTop: 12, paddingTop: 12, borderTop: `1px solid ${colors.line}`,
-      }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ fontSize: 12, color: colors.inkSoft, display: 'block', marginBottom: 4 }}>
-            Find a school
-          </label>
-          <input
-            value={search}
-            onChange={(e) => onSearch(e.target.value)}
-            placeholder="Search by school name or ID — narrowed by the filters above"
-            style={{
-              width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 14,
-              border: '1px solid rgba(0,0,0,0.12)', background: '#fff',
-            }}
-          />
-        </div>
-
-        {anyActive && (
+      {/* Only appears once something is selected, so the bar stays a
+          single quiet row until the reader actually narrows. */}
+      {anyActive && (
+        <div style={{
+          display: 'flex', justifyContent: 'flex-end',
+          marginTop: 12, paddingTop: 12, borderTop: `1px solid ${colors.line}`,
+        }}>
           <button
-            onClick={() => { onChange({}); onSearch(''); }}
+            onClick={() => onChange({})}
             style={{
               padding: '9px 14px', borderRadius: 10, cursor: 'pointer', fontSize: 13,
               border: 'none', background: colors.blue, color: '#fff', fontWeight: 600,
-              height: 38, whiteSpace: 'nowrap',
+              whiteSpace: 'nowrap',
             }}
           >
             Clear all
           </button>
-        )}
-      </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -1,19 +1,25 @@
 // src/components/SchoolPanel.tsx
-// School results for whatever the single FilterBar currently selects.
+// The schools inside whatever the FilterBar currently selects.
 //
 // This was FinderSection, which carried its own five dropdowns and its
 // own filter state — a second filter that silently disagreed with the
-// dashboard's. All of that is gone. It now receives filters and search
-// text as props, so it can only ever show the same scope as the charts.
+// dashboard's. All of that is gone. It receives filters as a prop, so it
+// can only ever show the same scope as the charts.
 //
-// Renders nothing until there is something to show, so it stays out of
-// the way of the finding until a visitor actually looks for a school.
+// The name/ID search it used to accept is gone too. The heading now
+// states the real number of schools in scope and how many of them are
+// drawn, because the old "50+" gave the reader no way to tell whether
+// narrowing further would help.
+//
+// Renders nothing until a filter is set, so it stays out of the way of
+// the finding until a visitor actually goes looking.
 
 import { useEffect, useState } from 'react';
 import {
-  searchSchools, getSchoolProfile, type SchoolHit, type SchoolProfile,
+  getSchools, getSchoolProfile, SCHOOLS_SHOWN,
+  type SchoolHit, type SchoolProfile,
 } from '../lib/queries';
-import { type Filters } from '../lib/filters';
+import { type Filters, scopeLabel } from '../lib/filters';
 import { colors, clay } from '../constants/theme';
 import { Card } from './ui';
 
@@ -26,28 +32,35 @@ function Metric({ label, value, c }: { label: string; value: string; c: string }
   );
 }
 
-export default function SchoolPanel({
-  filters, search,
-}: { filters: Filters; search: string }) {
+export default function SchoolPanel({ filters }: { filters: Filters }) {
   const [hits, setHits] = useState<SchoolHit[]>([]);
+  const [total, setTotal] = useState(0);
   const [profile, setProfile] = useState<SchoolProfile | null>(null);
 
   useEffect(() => {
-    const hasAny = search.trim() || Object.values(filters).some(Boolean);
-    if (!hasAny) { setHits([]); return; }
-    searchSchools(filters, search).then(setHits).catch(() => setHits([]));
-  }, [filters, search]);
+    if (!Object.values(filters).some(Boolean)) { setHits([]); setTotal(0); return; }
+    getSchools(filters)
+      .then((r) => { setHits(r.hits); setTotal(r.total); })
+      .catch(() => { setHits([]); setTotal(0); });
+  }, [filters]);
 
   // Only appears once the visitor has actually narrowed to something.
   if (hits.length === 0) return null;
 
+  const capped = total > SCHOOLS_SHOWN;
+  const scope = scopeLabel(filters);
+
   return (
     <Card
-      title={`${hits.length}${hits.length === 50 ? '+' : ''} school${hits.length === 1 ? '' : 's'} match your filters`}
+      title={
+        capped
+          ? `The ${SCHOOLS_SHOWN} largest schools in ${scope}`
+          : `${total} school${total === 1 ? '' : 's'} in ${scope}`
+      }
       accent={colors.blue}
       subtitle={
-        hits.length === 50
-          ? 'Showing the first 50 — narrow the filters above to see fewer.'
+        capped
+          ? `${scope} has ${total.toLocaleString()} schools in total. Narrow to a province, division, municipality, or barangay to see the rest.`
           : 'Click any school to see its full enrollment profile.'
       }
     >
