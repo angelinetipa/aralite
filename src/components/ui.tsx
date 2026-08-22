@@ -38,6 +38,36 @@ export function ErrorState() {
 }
 
 /**
+ * The paragraph under a chart: what it shows, what changed, what it does
+ * not license.
+ *
+ * A chart with a claim for a title still leaves the reader alone with
+ * it. The title says what is true; this says why it matters and where
+ * the argument stops. Kept to a short paragraph on purpose — past about
+ * four lines nobody reads it, and an unread caveat protects nobody.
+ *
+ * Everything passed in here is generated from the rows being drawn, not
+ * typed by hand, so the words cannot drift away from the bars.
+ */
+export function ChartNote({ children }: { children: ReactNode }) {
+  return (
+    <p
+      style={{
+        fontSize: 13.5,
+        color: colors.inkSoft,
+        lineHeight: 1.65,
+        margin: '16px 0 0',
+        paddingTop: 14,
+        borderTop: `1px solid ${colors.line}`,
+        maxWidth: '70ch',
+      }}
+    >
+      {children}
+    </p>
+  );
+}
+
+/**
  * A one-line summary that opens to the full text.
  *
  * The caveats on this dashboard matter, but printed in full they turned
