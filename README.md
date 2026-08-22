@@ -37,7 +37,7 @@ The dashboard takes a moment on first load while the SQL engine boots in your br
 - **The finding first** — the dashboard opens with the claim stated in one sentence, benchmarked against the national figure, with its caveat attached. Filter to any region and it rewrites itself.
 - **Evidence, then context** — two charts support the finding directly. Six more describing the dataset sit behind a toggle, closed by default, so the page reads as an argument rather than a wall.
 - **Every scoped number carries its national equivalent.** A figure with nothing to compare it against is not a finding.
-- **One filter for everything** — five cascading levels (Region → Province → Division → Municipality → Barangay) plus school search, in a single bar, driving every chart, stat, and school result at once.
+- **One filter for everything** — five cascading levels (Region → Province → Division → Municipality → Barangay) in a single bar, driving every chart, stat, and school result at once.
 - **Key findings** — plain-language insights calculated from the data, updating with the filter.
 - **Ask the data** — type a question in plain English; your own AI key (Groq or Gemini) writes the SQL, which runs read-only in the browser. The SQL is shown for trust.
 - **Admin page** — a separate `/admin` area to upload, clean, publish, and remove datasets.
@@ -140,7 +140,7 @@ aralite/
 │   │   ├── queries.ts          # all SQL lives here — describes the dataset
 │   │   ├── story.ts            # the finding layer — every figure paired with national
 │   │   ├── metrics.ts          # pure calculations, no SQL and no React
-│   │   ├── metrics.test.ts     # 15 tests asserting real DepEd numbers
+│   │   ├── metrics.test.ts     # 32 tests asserting real DepEd numbers
 │   │   ├── insights.ts         # auto-calculated findings
 │   │   ├── format.ts           # one adaptive number formatter for every axis
 │   │   ├── cleaning.ts         # browser cleaning rules
@@ -244,7 +244,7 @@ For the live-pipeline version of this idea — data that collects itself on a sc
 
 **The bugs that mattered here were all wrong numbers, not crashes.** A chart sorted by raw headcount while its bars showed percentages, and generated a confident, false headline. A subtitle hardcoded Grade 6→7 while the insights panel searched for the real largest gap, so the two named different grades for the same region. An axis formatter rounded 50k, 100k and 150k all to "0.1M". Every one rendered perfectly and every one passed the existing tests.
 
-So the 25 tests now assert **numbers**, using real DepEd figures verified three ways — in the notebook, in the app's own SQL, and in an Excel sheet anyone can rerun. Each test is a bug that actually shipped. `queries.ts` still has no direct coverage, because testing it needs DuckDB in the test environment; the calculations it feeds were pulled into `metrics.ts`, which is tested.
+So the 32 tests now assert **numbers**, using real DepEd figures verified three ways — in the notebook, in the app's own SQL, and in an Excel sheet anyone can rerun. Each test is a bug that actually shipped. `queries.ts` still has no direct coverage, because testing it needs DuckDB in the test environment; the calculations it feeds were pulled into `metrics.ts`, which is tested.
 
 **The cleaned street address column is unused.** `clean.py` builds `Street Address Clean` for future mapping or geocoding work. Nothing reads it yet.
 

@@ -81,7 +81,7 @@ The ones with something extra:
 - **`AvailabilitySection`** — the evidence. Rendered twice with different `metric` props. **Deliberately ignores the filter** — it's the benchmark, and a benchmark with one bar left isn't a benchmark. It outlines your selection instead.
 - **`DropoffSection`** — finds the largest grade gap via `metrics.ts`. Refuses to call it a dropout rate.
 - **`AskSection`** — plain English → SQL via the user's own API key. Read-only check before anything runs, and it shows the SQL.
-- **`FilterBar`** — five cascading dropdowns plus school search. One control for the whole page.
+- **`FilterBar`** — five cascading dropdowns. One control for the whole page.
 
 **Q: Why is the availability chart the only one that ignores the filter?** Because its job is comparison. Filter it to CARAGA and there's one bar and nothing to judge it against.
 
@@ -101,7 +101,7 @@ The ones with something extra:
 
 ## Tests
 
-`npm run test` → 25 tests.
+`npm run test` → 32 tests.
 
 - `cleaning.test.ts` (10) — the cleaning rules
 - `metrics.test.ts` (15) — **real DepEd numbers**, verified in the notebook, in DuckDB, and in Excel
@@ -134,7 +134,7 @@ The ones with something extra:
 
 **"Why DuckDB in the browser?"** → No server, full dataset, public data.
 
-**"How do you know your numbers are right?"** → Four ways. Validation assertions in the notebook that run before any result. 25 tests on real figures. An Excel sheet anyone can rerun. And the dashboard's SQL reproduces the notebook exactly — 2.5206, not "about 2.5".
+**"How do you know your numbers are right?"** → Four ways. Validation assertions in the notebook that run before any result. 32 tests on real figures. An Excel sheet anyone can rerun. And the dashboard's SQL reproduces the notebook exactly — 2.5206, not "about 2.5".
 
 **"What's wrong with it?"** → Availability is inferred, not stated. One school year, no trend. School-level grain, so no learner is ever followed. Region means where the school is, not where the learner lives.
 
