@@ -2,22 +2,18 @@
 // The public dashboard. All data management lives at /admin.
 //
 // Order is an argument, not a layout:
-//   scene    one filter, and what it currently selects
-//   finding  the single claim this dashboard makes, in a sentence
-//   evidence the two charts that support it, side by side
-//   so what  the only part that says what to do about any of it
-//   context  everything else, COLLAPSED by default
-//   tools    ask the data yourself
-//   limits   what none of it can tell you
+//   intro     what this is, in two sentences
+//   finding   the one claim, always national
+//   evidence  two charts that support it, side by side
+//   so what   where to act first, and what the data cannot decide
+//   explore   the filter, and everything that follows it
+//   context   six more charts, collapsed by default
+//   tools     ask the data yourself
+//   limits    what none of it can tell you
 //
-// The context block starts closed so the default view stays short, and
-// six chart queries never run unless someone asks for them.
-//
-// "So what" sits directly after the evidence and OUTSIDE that toggle on
-// purpose. Behind a toggle the recommendation would be invisible.
-//
-// Tools sit at the BOTTOM on purpose. Above the finding they compete
-// with it.
+// Everything above "Explore your area" is national and never changes
+// when the filter moves. That keeps the top of the page stable. Only the
+// sections below the filter respond to it.
 
 import { useEffect, useState } from 'react';
 import { getDB } from '../lib/db';
@@ -78,7 +74,7 @@ export default function DashboardPage() {
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem 2rem', color: colors.ink }}>
       <NavHeader />
 
-      {/* Context before the spinner, so a visitor can read what this is
+      {/* Shown before the spinner, so a visitor can read what this is
           while DuckDB and the parquet files load. */}
       <div style={{ marginTop: '1.5rem' }}>
         <IntroPanel />
@@ -87,41 +83,43 @@ export default function DashboardPage() {
       {!ready && <Spinner />}
 
       <div style={{ display: ready ? 'block' : 'none' }}>
-        {/* ---- Scene ---------------------------------------------------- */}
-        <FilterBar filters={filters} onChange={setFilters} />
+        {/* ---- The finding (national) ----------------------------------- */}
+        <StorySection />
 
-        <p style={{ fontSize: 14, color: colors.inkSoft, margin: '0 0 20px' }}>
-          Showing data for <strong style={{ color: colors.ink }}>{scope}</strong>
-        </p>
-
-        <SchoolPanel filters={filters} />
-
-        <StatCards filters={filters} />
-
-        {/* ---- The finding ---------------------------------------------- */}
-        <StorySection filters={filters} />
-
-        {/* ---- The evidence --------------------------------------------- */}
+        {/* ---- The evidence (national) ---------------------------------- */}
         <ActLabel
           kicker="The evidence"
           title="Where strand availability is narrowest"
-          blurb="Both charts stay national. Pick a region above and it is outlined, not isolated."
+          blurb="Both charts show the whole country. Red marks the regions to look at first."
         />
         <div className="aralite-pair">
           <AvailabilitySection filters={filters} metric="avgStrands" />
           <AvailabilitySection filters={filters} metric="pctLearnersOneStrand" />
         </div>
 
-        {/* ---- So what ---------------------------------------------------- */}
+        {/* ---- So what (national) --------------------------------------- */}
         <ActLabel
           kicker="So what"
           title="Where widening strand offerings would matter most"
-          blurb="The regions are calculated from the two charts above, not chosen by hand. The same panel says plainly what this data cannot decide."
+          blurb="The regions are calculated from the two charts above, not chosen by hand. The panel also says what this data cannot decide."
         />
         <RecommendationSection filters={filters} />
 
-        {/* ---- Context, closed by default -------------------------------- */}
-        <div style={{ margin: '38px 0 0' }}>
+        {/* ---- Explore your area (responds to the filter) --------------- */}
+        <ActLabel
+          kicker="Explore your area"
+          title="Compare your area with the country"
+          blurb="Pick a region to compare it with the country. You can go down to a single barangay."
+        />
+        <FilterBar filters={filters} onChange={setFilters} />
+        <p style={{ fontSize: 14, color: colors.inkSoft, margin: '0 0 20px' }}>
+          Showing data for <strong style={{ color: colors.ink }}>{scope}</strong>
+        </p>
+        <StatCards filters={filters} />
+        <SchoolPanel filters={filters} />
+
+        {/* ---- Context, closed by default ------------------------------- */}
+        <div style={{ margin: '14px 0 0' }}>
           <button
             onClick={() => setShowContext((v) => !v)}
             aria-expanded={showContext}
@@ -137,7 +135,7 @@ export default function DashboardPage() {
                 {showContext ? 'Hide the rest of the data' : 'Show the rest of the data'}
               </span>
               <span style={{ display: 'block', fontSize: 13, color: colors.inkSoft, marginTop: 3 }}>
-                Six more charts describing {scope}. They fill in the picture and do not argue the finding.
+                Six more charts for {scope}. They add background and do not argue the finding.
               </span>
             </span>
             <span style={{ fontSize: 20, color: colors.inkSoft, lineHeight: 1 }}>
@@ -168,15 +166,15 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ---- Tools ------------------------------------------------------ */}
+        {/* ---- Tools ---------------------------------------------------- */}
         <ActLabel
           kicker="Ask it yourself"
           title="Put a question to the data"
-          blurb="Plain English in, SQL and results out. Queries the whole dataset, ignoring the filter above."
+          blurb="Plain English in, SQL and results out. It queries the whole dataset and ignores the filter above."
         />
         <AskSection />
 
-        {/* ---- Limits ----------------------------------------------------- */}
+        {/* ---- Limits --------------------------------------------------- */}
         <DataNote />
       </div>
 

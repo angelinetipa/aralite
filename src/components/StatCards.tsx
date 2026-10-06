@@ -1,44 +1,35 @@
 // src/components/StatCards.tsx
-// Five headline numbers for the current filter.
+// Four numbers for the area picked in the filter.
 //
-// "Male / Female" was removed. It was recomputing correctly, but the
-// real spread across the 17 regions is 48.6% to 51.7% male — so it
-// printed 51% / 49% almost everywhere and looked frozen. A card that shows the same value
-// no matter what you select is not a statistic, it is decoration, and it
-// was taking the most valuable space on the page. The gender breakdown
-// is still on the page in full, as its own chart, where the small
-// differences are actually visible.
+// Two are plain counts. The other two are the numbers the finding rests
+// on, so each carries its national figure beside it. When the area is
+// worse than the country the value turns red, and that is the only time
+// red appears here.
 //
-// It is replaced by strands per school, which moves from 1.97 to 3.11
-// across regions and is the number the dashboard's finding rests on.
+// "Male / Female", "Largest region" and "Avg per school" were removed.
+// The first two barely moved or repeated a chart, and the third did not
+// support the finding.
 
 import { useEffect, useState } from 'react';
-import { type Filters } from '../lib/filters';
+import { type Filters, scopeLabel } from '../lib/filters';
 import { getHeadline, type Headline } from '../lib/queries';
-import { getAvailability } from '../lib/story';
+import { getAvailability, type Availability } from '../lib/story';
 import { colors, clay } from '../constants/theme';
 
 function StatCard({
-  label, value, accent, note,
-}: { label: string; value: string; accent: string; note?: string }) {
+  label, value, note, tone,
+}: { label: string; value: string; note?: string; tone?: string }) {
   return (
-    <div style={{
-      ...clay.card,
-      flex: '1 0 150px',
-      minWidth: 150,
-      padding: '1.1rem 1.2rem',
-      borderTop: `4px solid ${accent}`,
-      textAlign: 'center',
-    }}>
-      <div style={{ fontSize: 13, color: colors.inkSoft }}>{label}</div>
+    <div style={{ ...clay.card, padding: '1.1rem 1.2rem', textAlign: 'center' }}>
+      <div style={{ fontSize: 13, color: colors.inkSoft, lineHeight: 1.35 }}>{label}</div>
       <div style={{
-        fontSize: 23, fontWeight: 800, color: colors.ink,
-        marginTop: 4, whiteSpace: 'nowrap',
+        fontSize: 25, fontWeight: 800, color: tone ?? colors.ink,
+        marginTop: 6, whiteSpace: 'nowrap',
       }}>
         {value}
       </div>
       {note && (
-        <div style={{ fontSize: 11, color: colors.inkSoft, marginTop: 3 }}>{note}</div>
+        <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 4 }}>{note}</div>
       )}
     </div>
   );
@@ -46,33 +37,50 @@ function StatCard({
 
 export default function StatCards({ filters }: { filters: Filters }) {
   const [h, setH] = useState<Headline | null>(null);
-  const [strands, setStrands] = useState<{ scope: number; national: number } | null>(null);
+  const [a, setA] = useState<{ scope: Availability; national: Availability } | null>(null);
 
   useEffect(() => {
     getHeadline(filters).then(setH).catch(() => setH(null));
-    getAvailability(filters)
-      .then((a) => setStrands({ scope: a.scope.avgStrands, national: a.national.avgStrands }))
-      .catch(() => setStrands(null));
+    getAvailability(filters).then(setA).catch(() => setA(null));
   }, [filters]);
 
   if (!h) return null;
 
+  const isNational = scopeLabel(filters) === 'the country';
+  const hasShs = a !== null && a.scope.schools > 0;
+
+  const strandsWorse = hasShs && !isNational && a!.scope.avgStrands < a!.national.avgStrands;
+  const oneWorse = hasShs && !isNational
+    && a!.scope.pctLearnersOneStrand > a!.national.pctLearnersOneStrand;
+
   return (
     <div style={{
-      display: 'flex', gap: 14, marginBottom: 24,
-      overflowX: 'auto', padding: '6px 2px 12px',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+      gap: 14, marginBottom: 24,
     }}>
-      <StatCard label="Total learners" value={h.total.toLocaleString()} accent={colors.blue} />
-      <StatCard label="Schools" value={h.schools.toLocaleString()} accent={colors.yellow} />
-      <StatCard label="Senior-high learners" value={h.shs.toLocaleString()} accent={colors.red} />
-      <StatCard label="Largest region" value={h.topRegion} accent={colors.blue} />
+      <StatCard label="Total learners" value={h.total.toLocaleString()} />
+      <StatCard label="Schools" value={h.schools.toLocaleString()} />
       <StatCard
         label="Strands per school"
-        value={strands ? strands.scope.toFixed(2) : '—'}
-        accent={colors.red}
-        note={strands ? `${strands.national.toFixed(2)} nationally` : undefined}
+        value={hasShs ? a!.scope.avgStrands.toFixed(2) : '—'}
+        tone={strandsWorse ? colors.worse : undefined}
+        note={
+          !hasShs ? 'No senior high data'
+            : isNational ? 'of 8 possible'
+              : `${a!.national.avgStrands.toFixed(2)} nationally`
+        }
       />
-      <StatCard label="Avg per school" value={h.avgPerSchool.toLocaleString()} accent={colors.blue} />
+      <StatCard
+        label="Senior high learners in one strand schools"
+        value={hasShs ? `${a!.scope.pctLearnersOneStrand.toFixed(1)}%` : '—'}
+        tone={oneWorse ? colors.worse : undefined}
+        note={
+          !hasShs ? 'No senior high data'
+            : isNational ? 'national figure'
+              : `${a!.national.pctLearnersOneStrand.toFixed(1)}% nationally`
+        }
+      />
     </div>
   );
 }
