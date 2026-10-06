@@ -5,23 +5,18 @@
 import type { ReactNode } from 'react';
 import { colors, clay } from '../constants/theme';
 
-export function Card({ title, subtitle, accent, children }: {
+export function Card({ title, subtitle, children }: {
   title: string;
   subtitle?: string;
-  accent?: string;               // small colored dot beside the title
+  /** @deprecated Ignored. Color must mean something, so the decorative
+   *  dot is gone. Kept only so existing callers still compile; removed
+   *  from callers in Step 3. */
+  accent?: string;
   children: ReactNode;
 }) {
   return (
     <div style={{ ...clay.card, padding: '1.4rem 1.6rem', marginBottom: 24 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {accent && (
-          <span style={{
-            width: 10, height: 10, borderRadius: 5, background: accent,
-            boxShadow: `0 0 0 4px ${accent}22`,
-          }} />
-        )}
-        <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: colors.ink }}>{title}</h2>
-      </div>
+      <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: colors.ink }}>{title}</h2>
       {subtitle && (
         <p style={{ color: colors.inkSoft, fontSize: 14, margin: '6px 0 0' }}>{subtitle}</p>
       )}
@@ -39,15 +34,8 @@ export function ErrorState() {
 
 /**
  * The paragraph under a chart: what it shows, what changed, what it does
- * not license.
- *
- * A chart with a claim for a title still leaves the reader alone with
- * it. The title says what is true; this says why it matters and where
- * the argument stops. Kept to a short paragraph on purpose — past about
- * four lines nobody reads it, and an unread caveat protects nobody.
- *
- * Everything passed in here is generated from the rows being drawn, not
- * typed by hand, so the words cannot drift away from the bars.
+ * not license. Keep it to a short paragraph. Past about four lines nobody
+ * reads it, and an unread caveat protects nobody.
  */
 export function ChartNote({ children }: { children: ReactNode }) {
   return (
@@ -68,12 +56,8 @@ export function ChartNote({ children }: { children: ReactNode }) {
 }
 
 /**
- * A one-line summary that opens to the full text.
- *
- * The caveats on this dashboard matter, but printed in full they turned
- * every card into a wall of prose. Collapsed, the page stays scannable
- * and the detail is one click away for anyone who wants it — which is
- * the reader who was going to read it anyway.
+ * A one-line summary that opens to the full text. Keeps the page
+ * scannable while the detail stays one click away.
  */
 export function Disclosure({
   summary, children,
