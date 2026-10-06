@@ -1,7 +1,7 @@
 /* Aralite global styles.
    Vite's default index.css ships a DARK theme with a centered,
-   max-width #root — that's what caused the black side bars.
-   We replace it with a clean light base; layout lives in components. */
+   max-width #root, which caused the black side bars.
+   It is replaced with a clean light base. Layout lives in components. */
 
 * {
   box-sizing: border-box;
@@ -27,17 +27,32 @@ body {
     grid-template-columns: 1fr !important;
   }
 
-  /* On mobile the findings shouldn't stick — they'd cover the charts. */
+  /* On mobile the findings shouldn't stick, they'd cover the charts. */
   .aralite-cols>div:first-child {
     position: static !important;
+  }
+}
+
+/* Two charts side by side. Cards in the same row stretch to the same
+   height. Below 980px each chart gets its own row so the region labels
+   keep enough room. */
+.aralite-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 24px;
+  align-items: stretch;
+}
+
+@media (max-width: 980px) {
+  .aralite-pair {
+    grid-template-columns: 1fr;
   }
 }
 
 /* Visual hierarchy: the story leads, context supports.
    Charts below "The rest of the picture" describe the dataset rather
    than argue the finding, so they sit back in muted colour. Hovering
-   the block restores full saturation — quiet by default, sharp when
-   you actually engage with it. */
+   the block restores full saturation. */
 .aralite-context {
   filter: saturate(0.4);
   transition: filter 220ms ease;

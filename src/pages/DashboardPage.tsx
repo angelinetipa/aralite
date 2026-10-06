@@ -2,28 +2,22 @@
 // The public dashboard. All data management lives at /admin.
 //
 // Order is an argument, not a layout:
-//   scene    — one filter, and what it currently selects
-//   finding  — the single claim this dashboard makes, in a sentence
-//   evidence — the two charts that support it, benchmarked nationally
-//   so what  — the only part that says what to do about any of it
-//   context  — everything else, COLLAPSED by default
-//   tools    — ask the data yourself
-//   limits   — what none of it can tell you
+//   scene    one filter, and what it currently selects
+//   finding  the single claim this dashboard makes, in a sentence
+//   evidence the two charts that support it, side by side
+//   so what  the only part that says what to do about any of it
+//   context  everything else, COLLAPSED by default
+//   tools    ask the data yourself
+//   limits   what none of it can tell you
 //
-// The context block starts closed. Open, it made the page a wall of
-// charts and left the reader to work out which mattered; closed, the
-// default view is filter -> finding -> evidence -> so what, and the rest
-// is an appendix for anyone who wants it. It also means six chart
-// queries never run unless someone asks for them.
+// The context block starts closed so the default view stays short, and
+// six chart queries never run unless someone asks for them.
 //
 // "So what" sits directly after the evidence and OUTSIDE that toggle on
-// purpose. It used to live only in the GitHub writeup, so a visitor got
-// the problem and no recommendation — and the argument here is that the
-// obvious recommendation is the wrong one. Behind a toggle it would be
-// invisible again.
+// purpose. Behind a toggle the recommendation would be invisible.
 //
 // Tools sit at the BOTTOM on purpose. Above the finding they compete
-// with it, and a visitor landing here should meet the argument first.
+// with it.
 
 import { useEffect, useState } from 'react';
 import { getDB } from '../lib/db';
@@ -84,8 +78,8 @@ export default function DashboardPage() {
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem 2rem', color: colors.ink }}>
       <NavHeader />
 
-      {/* Context before the spinner: a visitor can read what this is while
-          DuckDB and the parquet files load. */}
+      {/* Context before the spinner, so a visitor can read what this is
+          while DuckDB and the parquet files load. */}
       <div style={{ marginTop: '1.5rem' }}>
         <IntroPanel />
       </div>
@@ -113,14 +107,16 @@ export default function DashboardPage() {
           title="Where strand availability is narrowest"
           blurb="Both charts stay national. Pick a region above and it is outlined, not isolated."
         />
-        <AvailabilitySection filters={filters} metric="avgStrands" />
-        <AvailabilitySection filters={filters} metric="pctLearnersOneStrand" />
+        <div className="aralite-pair">
+          <AvailabilitySection filters={filters} metric="avgStrands" />
+          <AvailabilitySection filters={filters} metric="pctLearnersOneStrand" />
+        </div>
 
         {/* ---- So what ---------------------------------------------------- */}
         <ActLabel
           kicker="So what"
           title="Where widening strand offerings would matter most"
-          blurb="The regions are calculated from the two charts above, not chosen by hand — and the same panel says plainly what this data cannot decide."
+          blurb="The regions are calculated from the two charts above, not chosen by hand. The same panel says plainly what this data cannot decide."
         />
         <RecommendationSection filters={filters} />
 
@@ -141,7 +137,7 @@ export default function DashboardPage() {
                 {showContext ? 'Hide the rest of the data' : 'Show the rest of the data'}
               </span>
               <span style={{ display: 'block', fontSize: 13, color: colors.inkSoft, marginTop: 3 }}>
-                Six more charts describing {scope}. They fill in the picture; they do not argue the finding.
+                Six more charts describing {scope}. They fill in the picture and do not argue the finding.
               </span>
             </span>
             <span style={{ fontSize: 20, color: colors.inkSoft, lineHeight: 1 }}>
