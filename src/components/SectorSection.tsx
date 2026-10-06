@@ -1,15 +1,19 @@
 // src/components/SectorSection.tsx
-// Public vs Private (plus SUCs/LUCs, PSO). A donut tells this
-// one-glance story best: public dominates — by how much?
+// Public vs private, plus SUCs/LUCs and PSO.
+//
+// This was a donut. Bars are easier to compare and every sector gets a
+// direct label with its share, so no legend is needed. Gray by default,
+// blue on the largest sector only.
 
 import { useEffect, useState } from 'react';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList,
+} from 'recharts';
 import { getBySector, type SectorRow } from '../lib/queries';
 import { type Filters } from '../lib/filters';
+import { compact } from '../lib/format';
 import { colors } from '../constants/theme';
 import { Card, ErrorState } from './ui';
-
-const SECTOR_COLORS = [colors.blue, colors.red, colors.yellow, colors.blueSoft];
 
 export default function SectorSection({ filters }: { filters: Filters }) {
   const [data, setData] = useState<SectorRow[]>([]);
@@ -22,33 +26,57 @@ export default function SectorSection({ filters }: { filters: Filters }) {
       .catch(() => setStatus('error'));
   }, [filters]);
 
-  if (status === 'loading') return null; // App spinner covers this
+  if (status === 'loading') return null;
   if (status === 'error') return <ErrorState />;
 
   const total = data.reduce((s, r) => s + r.total, 0);
+  const share = (v: number) => (total ? (v / total) * 100 : 0);
+  const rows = data.map((r) => {
+    const s = share(r.total);
+    return { ...r, label: `${compact(r.total)} (${s < 1 ? '<1' : Math.round(s)}%)` };
+  });
   const pub = data.find((d) => d.sector === 'Public');
-  const pct = pub && total ? Math.round((pub.total / total) * 100) : 0;
+  const pubPct = pub ? Math.round(share(pub.total)) : 0;
 
   return (
     <Card
-      title="Public vs private schools"
-      accent={colors.red}
-      subtitle={`${pct}% of learners are in public schools.`}
+      title={pub ? `Public schools hold ${pubPct}% of learners` : 'Learners by school sector'}
+      subtitle="Learners by sector. SUCs and LUCs are state and local universities and colleges. PSO is Philippine Schools Overseas."
     >
-      <div style={{ height: 300 }}>
+      <div style={{ height: Math.max(220, rows.length * 56 + 50) }}>
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data} dataKey="total" nameKey="sector"
-              innerRadius="55%" outerRadius="80%" paddingAngle={2}
-            >
-              {data.map((_, i) => (
-                <Cell key={i} fill={SECTOR_COLORS[i % SECTOR_COLORS.length]} />
+          <BarChart
+            data={rows} layout="vertical" barCategoryGap={10}
+            margin={{ top: 8, right: 84, bottom: 24, left: 4 }}
+          >
+            <XAxis
+              type="number" tickFormatter={compact}
+              tick={{ fontSize: 11.5, fill: colors.inkSoft }}
+              axisLine={{ stroke: colors.line }} tickLine={{ stroke: colors.line }}
+              label={{
+                value: 'Learners', position: 'insideBottom', offset: -14,
+                style: { fontSize: 11.5, fill: colors.inkSoft },
+              }}
+            />
+            <YAxis
+              type="category" dataKey="sector" width={84} interval={0}
+              axisLine={{ stroke: colors.line }} tickLine={false}
+              tick={{ fontSize: 11.5, fill: colors.ink }}
+            />
+            <Tooltip
+              cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+              formatter={(v) => Number(v).toLocaleString()}
+            />
+            <Bar dataKey="total" radius={[0, 4, 4, 0]}>
+              {rows.map((r, i) => (
+                <Cell key={r.sector} fill={i === 0 ? colors.highlight : colors.gray} />
               ))}
-            </Pie>
-            <Tooltip formatter={(v) => Number(v).toLocaleString()} />
-            <Legend />
-          </PieChart>
+              <LabelList
+                dataKey="label" position="right"
+                style={{ fontSize: 11.5, fill: colors.ink, fontWeight: 600 }}
+              />
+            </Bar>
+          </BarChart>
         </ResponsiveContainer>
       </div>
     </Card>
