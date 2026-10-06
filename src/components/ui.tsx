@@ -8,10 +8,6 @@ import { colors, clay } from '../constants/theme';
 export function Card({ title, subtitle, children }: {
   title: string;
   subtitle?: string;
-  /** @deprecated Ignored. Color must mean something, so the decorative
-   *  dot is gone. Kept only so existing callers still compile; removed
-   *  from callers in Step 3. */
-  accent?: string;
   children: ReactNode;
 }) {
   return (

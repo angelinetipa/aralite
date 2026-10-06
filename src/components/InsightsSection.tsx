@@ -1,7 +1,8 @@
 // src/components/InsightsSection.tsx
-// The "briefing" — plain-language findings the app calculated for the
-// user. This is what makes Aralite feel like a real decision tool: it
-// tells DepEd staff what matters before they read a single chart.
+// Plain language findings the app calculated for the current filter.
+//
+// Color. Red is only for "needs attention". Everything else is neutral,
+// so a red flag still means something when it appears.
 
 import { useEffect, useState } from 'react';
 import { type Filters } from '../lib/filters';
@@ -9,11 +10,10 @@ import { scopeLabel } from '../lib/filters';
 import { getInsights, type Insight } from '../lib/insights';
 import { colors, clay } from '../constants/theme';
 
-// Each tone maps to a flag color + label so findings are scannable.
 const TONE = {
-  alert: { color: colors.red, label: 'Needs attention' },
-  info: { color: colors.blue, label: 'Good to know' },
-  good: { color: colors.yellow, label: 'Highlight' },
+  alert: { color: colors.worse, label: 'Needs attention' },
+  info: { color: colors.grayDark, label: 'Good to know' },
+  good: { color: colors.highlight, label: 'Highlight' },
 } as const;
 
 export default function InsightsSection({ filters }: { filters: Filters }) {
@@ -31,18 +31,14 @@ export default function InsightsSection({ filters }: { filters: Filters }) {
 
   return (
     <div style={{ marginBottom: 28 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
         <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Key findings</h2>
         <span style={{ fontSize: 13, color: colors.inkSoft }}>
-          for {scopeLabel(filters)} · auto-calculated
+          for {scopeLabel(filters)} · calculated from the data
         </span>
       </div>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr',
-        gap: 14,
-      }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14 }}>
         {items.map((it, i) => {
           const t = TONE[it.tone];
           return (

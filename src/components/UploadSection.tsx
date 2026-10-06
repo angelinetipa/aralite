@@ -1,8 +1,8 @@
 // src/components/UploadSection.tsx
-// Upload your own dataset (CSV or Excel) -> cleaned in the browser
-// (rules in src/lib/cleaning.ts) -> see a report -> download the clean
-// copy, AND (if it's DepEd-format) load it straight into the dashboard.
-// Nothing leaves the user's computer — no server.
+// Upload your own dataset (CSV or Excel), clean it in the browser (rules
+// in src/lib/cleaning.ts), see a report, download the clean copy, and
+// when it is DepEd format, load it straight into the dashboard.
+// Nothing leaves the user's computer. There is no server.
 
 import { useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
@@ -12,8 +12,8 @@ import { colors, clay } from '../constants/theme';
 import { Card } from './ui';
 
 // Some files (like the DepEd export) have title rows before the real
-// header. Find the row with real column names — browser version of
-// pandas' header=4.
+// header. This finds the row with real column names, the browser version
+// of pandas' header=4.
 function findHeaderRow(sheet: XLSX.WorkSheet): number {
   const grid = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: '' });
   for (let i = 0; i < Math.min(grid.length, 10); i++) {
@@ -28,13 +28,13 @@ type State =
   | { step: 'working' }
   | { step: 'error'; message: string }
   | {
-      step: 'done';
-      name: string;
-      report: CleanReport;
-      csv: string;
-      isDepEd: boolean;
-      enrollmentCols: string[];
-    }
+    step: 'done';
+    name: string;
+    report: CleanReport;
+    csv: string;
+    isDepEd: boolean;
+    enrollmentCols: string[];
+  }
   | { step: 'loaded'; name: string };
 
 export default function UploadSection({
@@ -66,7 +66,7 @@ export default function UploadSection({
       }
 
       const { cleaned, report } = cleanTable(rows);
-      // Enrollment columns = those ending in " Male" / " Female".
+      // Enrollment columns are the ones ending in " Male" or " Female".
       const enrollmentCols = Object.keys(cleaned[0]).filter(
         (c) => / (Male|Female)$/.test(c)
       );
@@ -108,8 +108,7 @@ export default function UploadSection({
   return (
     <Card
       title="Clean your own dataset"
-      accent={colors.blue}
-      subtitle="Upload a CSV or Excel file — it's cleaned right in your browser and never leaves your computer."
+      subtitle="Upload a CSV or Excel file. It is cleaned right in your browser and never leaves your computer."
     >
       <input
         ref={inputRef}
@@ -185,7 +184,7 @@ export default function UploadSection({
           {!state.isDepEd && (
             <p style={{ fontSize: 13, color: colors.red, marginTop: 12 }}>
               ⚠ This file doesn't match the DepEd enrollment format, so it can't
-              feed the dashboard charts — but you can still download the cleaned copy.
+              feed the dashboard charts. You can still download the cleaned copy.
             </p>
           )}
 

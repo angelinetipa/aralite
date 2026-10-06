@@ -7,15 +7,17 @@ import { colors, clay } from '../constants/theme';
 
 const FACTS = [
   { label: 'Source', value: 'DepEd Learner Information System' },
-  { label: 'Coverage', value: 'School year 2023–2024' },
+  { label: 'Coverage', value: 'School year 2023 to 2024' },
   { label: 'Rows', value: '60,167 schools' },
   { label: 'Grain', value: 'One row per school, not per learner' },
 ];
 
 const LIMITS = [
-  'This is a one-time snapshot, not a live feed. It cannot show trends across school years.',
+  'This is a one time snapshot, not a live feed. It cannot show trends across school years.',
   'Counts are per school, so it cannot follow individual learners or say why anyone left.',
-  'The Grade 6 to 7 gap is a difference between two grade levels in one year. It is a signal worth investigating, not a measured dropout rate.',
+  'Strand availability is inferred from enrollment, because the source file has no column for strands offered.',
+  'Enrollment is not preference. A learner can only enrol in a strand their school runs.',
+  'The largest gap between grade levels compares two groups counted in the same year. It is a signal worth investigating, not a measured dropout rate.',
 ];
 
 export default function DataNote() {
@@ -56,7 +58,7 @@ export default function DataNote() {
         style={{
           fontSize: 11,
           fontWeight: 700,
-          color: colors.red,
+          color: colors.ink,
           textTransform: 'uppercase',
           letterSpacing: '0.05em',
           marginBottom: 8,

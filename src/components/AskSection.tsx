@@ -1,22 +1,26 @@
 // src/components/AskSection.tsx
-// Ask the data in plain English. The AI (user's own key) writes SQL,
-// we check it's read-only, DuckDB runs it, and we show: the answer as a
-// table, an auto bar chart when it fits, and the SQL itself (for trust
-// and learning).
+// Ask the data in plain English. The AI (the user's own key) writes SQL,
+// we check it is read only, DuckDB runs it, and we show the answer as a
+// table, an automatic bar chart when it fits, and the SQL itself for
+// trust and learning.
+//
+// Color. The automatic chart is gray with the top bar in blue, the same
+// as every other chart on the page.
 
 import { useState } from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import { questionToSQL, isSafeSelect, type Provider } from '../lib/ai';
 import { query } from '../lib/db';
+import { compact } from '../lib/format';
 import { colors } from '../constants/theme';
 import { Card } from './ui';
 
 type Row = Record<string, unknown>;
 
-// Nobody types into an empty AI box. Giving three real questions shows
-// what the feature can do and what kind of phrasing works.
+// Nobody types into an empty AI box. Three real questions show what the
+// feature can do and what kind of phrasing works.
 const EXAMPLES = [
   'Which regions have the largest Grade 6 to 7 gap?',
   'Top 10 provinces by senior high enrollment',
@@ -55,8 +59,8 @@ export default function AskSection() {
     }
   }
 
-  // Decide if the result can be a simple bar chart: exactly 2 columns,
-  // one text label + one number.
+  // The result becomes a simple bar chart when it has exactly 2 columns,
+  // one text label and one number.
   const cols = rows[0] ? Object.keys(rows[0]) : [];
   const chartable =
     rows.length > 1 && cols.length === 2 &&
@@ -73,10 +77,9 @@ export default function AskSection() {
   return (
     <Card
       title="Ask the data"
-      accent={colors.blue}
-      subtitle="Type a question in plain English. Your AI key writes the SQL, and it runs right here. Read-only — nothing can change the data."
+      subtitle="Type a question in plain English. Your AI key writes the SQL and it runs right here. It is read only, so nothing can change the data."
     >
-      {/* Provider + key */}
+      {/* Provider and key */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
         <select
           value={provider}
@@ -95,7 +98,7 @@ export default function AskSection() {
         />
       </div>
 
-      {/* Where do I get a key? — most visitors have never made one. */}
+      {/* Where do I get a key? Most visitors have never made one. */}
       <button
         onClick={() => setShowHelp((v) => !v)}
         style={{
@@ -121,27 +124,27 @@ export default function AskSection() {
           <p style={{ fontSize: 13, lineHeight: 1.6, margin: '0 0 10px', color: colors.inkSoft }}>
             <strong style={{ color: colors.ink }}>Why yours and not mine.</strong> If Aralite
             shipped with its own key, anyone could spend it. Using your own also means your
-            questions go straight from your browser to the provider &mdash; they never pass
-            through any server of mine, because there isn&rsquo;t one.
+            questions go straight from your browser to the provider. They never pass through any
+            server of mine, because there isn&rsquo;t one.
           </p>
           <p style={{ fontSize: 13, lineHeight: 1.6, margin: '0 0 10px', color: colors.inkSoft }}>
             Both options below have a free tier. Sign in, create a key, and paste it above.
           </p>
           <ul style={{ margin: '0 0 10px', paddingLeft: 18, fontSize: 13, color: colors.inkSoft }}>
             <li style={{ marginBottom: 5, lineHeight: 1.6 }}>
-              <strong style={{ color: colors.ink }}>Groq</strong> &mdash; fastest, no card needed:{' '}
+              <strong style={{ color: colors.ink }}>Groq</strong> is the fastest and needs no card.{' '}
               <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer"
-                 style={{ color: colors.blue }}>console.groq.com/keys</a>
+                style={{ color: colors.blue }}>console.groq.com/keys</a>
             </li>
             <li style={{ lineHeight: 1.6 }}>
-              <strong style={{ color: colors.ink }}>Gemini</strong> &mdash; use a Google account:{' '}
+              <strong style={{ color: colors.ink }}>Gemini</strong> works with any Google account.{' '}
               <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer"
-                 style={{ color: colors.blue }}>aistudio.google.com/apikey</a>
+                style={{ color: colors.blue }}>aistudio.google.com/apikey</a>
             </li>
           </ul>
           <p style={{ fontSize: 12.5, lineHeight: 1.6, margin: 0, color: colors.inkSoft }}>
             The key lives only in this browser tab and disappears when you close it. Nothing is
-            saved. Treat it like a password anyway &mdash; and you can delete it from the provider
+            saved. Treat it like a password anyway, and you can delete it from the provider
             at any time.
           </p>
         </div>
@@ -168,9 +171,9 @@ export default function AskSection() {
         </button>
       </div>
 
-      {/* Starter questions — click to fill and run */}
+      {/* Starter questions. Click to fill and run. */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 10 }}>
-        <span style={{ fontSize: 12.5, color: colors.inkSoft }}>Try:</span>
+        <span style={{ fontSize: 12.5, color: colors.inkSoft }}>Try</span>
         {EXAMPLES.map((ex) => (
           <button
             key={ex}
@@ -195,7 +198,7 @@ export default function AskSection() {
         <p style={{ color: colors.red, fontSize: 14 }}>{error}</p>
       )}
 
-      {/* Generated SQL — shown for trust + learning */}
+      {/* Generated SQL, shown for trust and learning */}
       {sql && (
         <pre style={{
           background: '#1F1D1A', color: '#EFE9DC', padding: '12px 14px',
@@ -203,16 +206,30 @@ export default function AskSection() {
         }}>{sql}</pre>
       )}
 
-      {/* Auto chart when the shape fits */}
+      {/* Automatic chart when the shape fits */}
       {status === 'done' && chartable && (
         <div style={{ height: 300, marginBottom: 16 }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 8, right: 16, bottom: 8, left: 8 }}>
-              <CartesianGrid stroke={colors.line} vertical={false} />
-              <XAxis dataKey="label" tick={{ fontSize: 11, fill: colors.inkSoft }} />
-              <YAxis tick={{ fontSize: 11, fill: colors.inkSoft }} />
-              <Tooltip formatter={(v) => Number(v).toLocaleString()} />
-              <Bar dataKey="value" fill={colors.blue} radius={[4, 4, 0, 0]} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11.5, fill: colors.inkSoft }}
+                axisLine={{ stroke: colors.line }} tickLine={false}
+              />
+              <YAxis
+                tickFormatter={compact} domain={[0, 'auto']}
+                tick={{ fontSize: 11.5, fill: colors.inkSoft }}
+                axisLine={{ stroke: colors.line }} tickLine={{ stroke: colors.line }}
+              />
+              <Tooltip
+                cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+                formatter={(v) => Number(v).toLocaleString()}
+              />
+              <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                {chartData.map((d, i) => (
+                  <Cell key={`${d.label}-${i}`} fill={i === 0 ? colors.highlight : colors.gray} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>

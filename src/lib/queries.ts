@@ -1,6 +1,6 @@
 // src/lib/queries.ts
-// Service layer: every SQL query lives here. Components never write SQL.
-// (UI -> section -> here -> DuckDB.) Every query takes the shared
+// Service layer. Every SQL query lives here and components never write
+// SQL. (UI -> section -> here -> DuckDB.) Every query takes the shared
 // Filters object, so location filtering works the same everywhere.
 
 import { query } from './db';
@@ -20,44 +20,25 @@ function where(f: Filters, extra: string[] = []): string {
 
 // ---- headline numbers -------------------------------------------------
 
-// Only the five figures StatCards actually draws.
+// Only the two counts StatCards draws. The strand figures come from
+// story.ts, which pairs them with the national benchmark.
 //
-// This used to return eleven. The other six — publicPct, privatePct,
-// male, female, malePct, femalePct — were left behind when the
-// Male/Female card was removed, and nothing has read them since. They
-// were not free: they were fed by two extra SQL queries that ran on
-// every filter change, in a dashboard where the whole point is that the
-// filter is fast.
-//
-// privatePct was also WRONG, and would have shipped the moment anyone
-// used it. It was 100 - publicPct, but this dataset has four sectors,
-// not two: Public, Private, SUCs/LUCs, and PSO. "Everything that is not
-// public" is 14.24%; Private alone is 13.78%. A dead field cannot lie to
-// anyone, but it sits there waiting to. SectorSection draws all four
-// sectors properly from getBySector — that is the honest version, and it
-// already exists.
-export type Headline = {
-  total: number; schools: number; shs: number;
-  topRegion: string; avgPerSchool: number;
-};
+// This used to return eleven fields, then five. The rest were left over
+// from cards that were removed, and each one cost a SQL query on every
+// filter change. A field nothing reads is also a field that can quietly
+// be wrong. The old privatePct was 100 minus publicPct, which counted
+// SUCs/LUCs and PSO as private. SectorSection draws all four sectors
+// properly from getBySector.
+export type Headline = { total: number; schools: number };
 
 export async function getHeadline(f: Filters): Promise<Headline> {
-  const [tot, sch, shs, top] = await Promise.all([
+  const [tot, sch] = await Promise.all([
     query<{ v: bigint }>(`SELECT SUM(e.enrollment) v ${JOINED} ${where(f)}`),
     query<{ v: bigint }>(`SELECT COUNT(*) v FROM schools s ${where(f)}`),
-    query<{ v: bigint }>(`SELECT SUM(e.enrollment) v ${JOINED} ${where(f, ["e.grade IN ('G11','G12')"])}`),
-    query<{ Region: string }>(`
-      SELECT s.Region, SUM(e.enrollment) t ${JOINED} ${where(f)}
-      GROUP BY s.Region ORDER BY t DESC LIMIT 1
-    `),
   ]);
-  const total = Number(tot[0]?.v ?? 0);
-  const schools = Number(sch[0]?.v ?? 0);
   return {
-    total, schools,
-    shs: Number(shs[0]?.v ?? 0),
-    topRegion: top[0]?.Region ?? '—',
-    avgPerSchool: schools ? Math.round(total / schools) : 0,
+    total: Number(tot[0]?.v ?? 0),
+    schools: Number(sch[0]?.v ?? 0),
   };
 }
 
@@ -113,9 +94,8 @@ export async function getBySector(f: Filters): Promise<SectorRow[]> {
   return rows.map((r) => ({ sector: r.Sector, total: Number(r.total) }));
 }
 
-// Regions chart ignores the region filter itself (always shows all
-// regions to click), but respects nothing narrower — it's the top-level
-// picker.
+// The regions chart ignores the region filter itself, because it always
+// shows every region to click. It is the top level picker.
 export type RegionRow = { region: string; total: number };
 export async function getTopRegions(): Promise<RegionRow[]> {
   const rows = await query<{ Region: string; total: bigint }>(`
@@ -137,27 +117,24 @@ export async function getLevelOptions(level: Level, f: Filters): Promise<string[
 
 // ---- schools in scope --------------------------------------------------
 //
-// There was a name/ID search box here. It was removed rather than
-// repaired. Two things were wrong with it and only one was fixable
-// cheaply: it searched "School Name" and ignored "School Name Clean",
-// so typing "elementary school" missed 17,494 schools recorded as "ES";
-// and it ranked matches by enrollment, so a small school was
-// unfindable by name at all. A search box that quietly hides the thing
-// you searched for is worse than no search box, because the reader
-// concludes the school is not in the data.
+// A name/ID search box used to live here. It was removed instead of
+// repaired. It searched "School Name" and ignored "School Name Clean", so
+// typing "elementary school" missed 17,494 schools recorded as "ES". It
+// also ranked matches by enrollment, so a small school could not be found
+// by name at all. A search box that hides what you searched for is worse
+// than no search box, because the reader concludes the school is not in
+// the data.
 //
-// The location filter already reaches a single barangay, which is a
-// slower but honest way to the same school. What is left is a plain
-// list of what the current filter selects.
+// The location filter already reaches a single barangay, which is slower
+// but honest. What remains is a plain list of what the filter selects.
 
 export type SchoolHit = {
   id: string; name: string; region: string;
   municipality: string; sector: string; total: number;
 };
 
-// How many rows the panel renders. The TOTAL is returned alongside so
-// the heading can say "the 50 largest of 2,687" instead of "50+", which
-// told the reader nothing about whether narrowing would help.
+// How many rows the panel renders. The TOTAL is returned alongside so the
+// heading can say "the 50 largest of 2,687" instead of "50+".
 export const SCHOOLS_SHOWN = 50;
 
 export async function getSchools(
@@ -215,7 +192,7 @@ export async function getSchoolProfile(id: string): Promise<SchoolProfile> {
 
 export { resetToDefault } from './db';
 
-// Strand × gender — shows gender skew within each senior-high strand.
+// Strand x gender, showing the gender split within each senior high strand.
 export type StrandGenderRow = { strand: string; Male: number; Female: number };
 export async function getStrandByGender(f: Filters): Promise<StrandGenderRow[]> {
   const rows = await query<{ strand: string; gender: string; total: bigint }>(`
@@ -234,7 +211,7 @@ export async function getStrandByGender(f: Filters): Promise<StrandGenderRow[]> 
   return [...map.values()].sort((a, b) => (b.Male + b.Female) - (a.Male + a.Female));
 }
 
-// School offering (Modified COC) — what levels each school provides.
+// School offering (Modified COC), the levels each school provides.
 export type OfferingRow = { offering: string; schools: number };
 export async function getByOffering(f: Filters): Promise<OfferingRow[]> {
   const rows = await query<{ coc: string; n: bigint }>(`
