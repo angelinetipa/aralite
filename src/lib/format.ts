@@ -17,3 +17,15 @@ export function compact(v: number): string {
   if (n >= 1_000) return `${(v / 1_000).toFixed(1)}k`;
   return `${Math.round(v)}`;
 }
+
+// Plain wording for a share. A share under 1% prints as "under 1%" so a
+// tiny group never shows as "0%", which reads like none at all.
+export function shareText(pct: number): string {
+  return pct < 1 ? 'under 1%' : `${Math.round(pct)}%`;
+}
+
+// "A", "A and B", "A, B and C". Used by the per chart findings.
+export function joinNames(names: string[]): string {
+  if (names.length <= 1) return names.join('');
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}

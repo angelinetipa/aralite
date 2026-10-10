@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import { getBySector, type SectorRow } from '../lib/queries';
 import { type Filters } from '../lib/filters';
-import { compact } from '../lib/format';
+import { compact, shareText } from '../lib/format';
 import { colors } from '../constants/theme';
 import { Card, ErrorState } from './ui';
 
@@ -38,8 +38,22 @@ export default function SectorSection({ filters }: { filters: Filters }) {
   const pub = data.find((d) => d.sector === 'Public');
   const pubPct = pub ? Math.round(share(pub.total)) : 0;
 
+  // The title names the largest sector. This names the next one and
+  // groups everything smaller together.
+  let finding: string | undefined;
+  if (data.length >= 2 && total) {
+    const second = data[1];
+    const rest = data.slice(2).reduce((s, r) => s + r.total, 0);
+    const more = data.length - 2;
+    finding = `${second.sector} comes next with ${shareText(share(second.total))} of learners.`;
+    if (more > 0) {
+      finding += ` The other ${more === 1 ? 'sector holds' : `${more} sectors together hold`} ${shareText(share(rest))}.`;
+    }
+  }
+
   return (
     <Card
+      finding={finding}
       title={pub ? `Public schools hold ${pubPct}% of learners` : 'Learners by school sector'}
       subtitle="Learners by sector. SUCs and LUCs are state and local universities and colleges. PSO is Philippine Schools Overseas."
     >

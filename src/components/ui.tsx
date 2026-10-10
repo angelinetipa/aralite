@@ -8,10 +8,14 @@ import { colors, clay } from '../constants/theme';
 // A card with a kicker gets a blue top border and a small label above the
 // title, the same marker the finding card uses. Cards without a kicker stay
 // plain. Use it only for the cards that make up the argument.
-export function Card({ title, subtitle, kicker, children }: {
+// A card can also carry a finding, one or two sentences the app worked
+// out from the data. It sits in a soft neutral box between the subtitle
+// and the chart, and it uses no color, so it never competes with the bars.
+export function Card({ title, subtitle, kicker, finding, children }: {
   title: string;
   subtitle?: string;
   kicker?: string;
+  finding?: string;
   children: ReactNode;
 }) {
   return (
@@ -36,6 +40,17 @@ export function Card({ title, subtitle, kicker, children }: {
       <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: colors.ink }}>{title}</h2>
       {subtitle && (
         <p style={{ color: colors.inkSoft, fontSize: 14, margin: '3px 0 0' }}>{subtitle}</p>
+      )}
+      {finding && (
+        <div
+          style={{
+            marginTop: 8, padding: '7px 10px', borderRadius: 10,
+            background: '#F4F1E9', fontSize: 13, lineHeight: 1.5, color: colors.ink,
+          }}
+        >
+          <strong>Key finding </strong>
+          {finding}
+        </div>
       )}
       <div style={{ marginTop: 10 }}>{children}</div>
     </div>

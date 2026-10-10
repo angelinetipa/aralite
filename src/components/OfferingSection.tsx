@@ -9,7 +9,7 @@ import {
 } from 'recharts';
 import { getByOffering, type OfferingRow } from '../lib/queries';
 import { type Filters } from '../lib/filters';
-import { compact } from '../lib/format';
+import { compact, shareText } from '../lib/format';
 import { colors } from '../constants/theme';
 import { Card, ErrorState } from './ui';
 
@@ -31,8 +31,16 @@ export default function OfferingSection({ filters }: { filters: Filters }) {
   const all = data.reduce((s, r) => s + r.schools, 0);
   const pct = top && all ? Math.round((top.schools / all) * 100) : 0;
 
+  // The title names the most common type. This adds the top two together
+  // and the rarest type.
+  const rare = data[data.length - 1];
+  const finding = data.length >= 3 && all
+    ? `${data[0].offering} and ${data[1].offering} make up ${shareText(((data[0].schools + data[1].schools) / all) * 100)} of schools. The least common type is ${rare.offering} with ${rare.schools.toLocaleString()} ${rare.schools === 1 ? 'school' : 'schools'}.`
+    : undefined;
+
   return (
     <Card
+      finding={finding}
       title={
         top
           ? `${top.offering} is the most common school type, ${pct}% of schools`

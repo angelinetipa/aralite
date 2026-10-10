@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import { getTopRegions, type RegionRow } from '../lib/queries';
 import { type Filters } from '../lib/filters';
-import { compact } from '../lib/format';
+import { compact, shareText } from '../lib/format';
 import { colors } from '../constants/theme';
 import { Card, ErrorState } from './ui';
 
@@ -39,8 +39,19 @@ export default function RegionsSection({
   const pct = top && all ? Math.round((top.total / all) * 100) : 0;
   const marked = filters.region ?? top?.region;
 
+  // The title names the largest region. This adds the top three together
+  // and the smallest region. PSO is not a region, so it is left out of
+  // the smallest.
+  const regionsOnly = data.filter((r) => r.region !== 'PSO');
+  const small = regionsOnly.reduce((a, b) => (b.total < a.total ? b : a), regionsOnly[0]);
+  const top3Share = all ? (data.slice(0, 3).reduce((s, r) => s + r.total, 0) / all) * 100 : 0;
+  const finding = data.length >= 4 && small
+    ? `The three largest regions hold ${shareText(top3Share)} of learners. ${small.region} is the smallest region at ${compact(small.total)}.`
+    : undefined;
+
   return (
     <Card
+      finding={finding}
       title={top ? `${top.region} has the most learners, ${pct}% of the country` : 'Enrollment by region'}
       subtitle="Learners by region. Click a bar to filter the whole dashboard to that region."
     >

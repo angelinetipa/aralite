@@ -14,7 +14,7 @@ import {
 } from 'recharts';
 import { getByStrand, type StrandRow } from '../lib/queries';
 import { type Filters } from '../lib/filters';
-import { compact } from '../lib/format';
+import { compact, shareText, joinNames } from '../lib/format';
 import { colors } from '../constants/theme';
 import { Card, ErrorState } from './ui';
 
@@ -36,8 +36,18 @@ export default function StrandsSection({ filters }: { filters: Filters }) {
   const all = data.reduce((s, r) => s + r.total, 0);
   const pct = top && all ? Math.round((top.total / all) * 100) : 0;
 
+  // Second sentence of the story. The title names the largest strand, so
+  // this one adds the top three together and the smallest.
+  const small = data[data.length - 1];
+  const top3 = data.slice(0, 3);
+  const top3Share = all ? (top3.reduce((s, r) => s + r.total, 0) / all) * 100 : 0;
+  const finding = data.length >= 4 && all
+    ? `${joinNames(top3.map((r) => r.strand))} together hold ${shareText(top3Share)} of senior high learners. ${small.strand} is the smallest at ${shareText((small.total / all) * 100)}.`
+    : undefined;
+
   return (
     <Card
+      finding={finding}
       title={
         top
           ? `${top.strand} has the most senior high learners, ${pct}% of the total`

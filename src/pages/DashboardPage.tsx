@@ -29,7 +29,6 @@ import StatCards from '../components/StatCards';
 import StorySection from '../components/StorySection';
 import AvailabilitySection from '../components/AvailabilitySection';
 import RecommendationSection from '../components/RecommendationSection';
-import InsightsSection from '../components/InsightsSection';
 import DropoffSection from '../components/DropoffSection';
 import StrandsSection from '../components/StrandsSection';
 import SectorSection from '../components/SectorSection';
@@ -126,7 +125,7 @@ export default function DashboardPage() {
                 {showContext ? 'Hide the rest of the data' : 'Show the rest of the data'}
               </span>
               <span style={{ display: 'block', fontSize: 13, color: colors.inkSoft, marginTop: 3 }}>
-                Six more charts for {scope}. They add background and do not argue the finding.
+                Six more charts for {scope}, each with its own key finding. They add background and do not argue the main finding.
               </span>
             </span>
             <span style={{ fontSize: 20, color: colors.inkSoft, lineHeight: 1 }}>
@@ -136,22 +135,15 @@ export default function DashboardPage() {
         </div>
 
         {showContext && (
-          <div
-            style={{
-              display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) 1fr',
-              gap: 14, alignItems: 'start', marginTop: 12,
-            }}
-            className="aralite-cols aralite-context"
-          >
-            <div style={{ position: 'sticky', top: 16 }}>
-              <InsightsSection filters={filters} />
-            </div>
+          <div className="aralite-grid2 aralite-context" style={{ marginTop: 12 }}>
             <div>
               <StrandsSection filters={filters} />
-              <SectorSection filters={filters} />
               <OfferingSection filters={filters} />
-              <DropoffSection filters={filters} />
               <StrandGenderSection filters={filters} />
+            </div>
+            <div>
+              <SectorSection filters={filters} />
+              <DropoffSection filters={filters} />
               <RegionsSection filters={filters} onPick={(r) => setFilters({ region: r })} />
             </div>
           </div>

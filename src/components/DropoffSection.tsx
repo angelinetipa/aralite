@@ -41,8 +41,19 @@ export default function DropoffSection({ filters }: { filters: Filters }) {
   const gap = largestGap(ordered);
   const dip = gap ? ordered.find((d) => d.grade === gap.to) : undefined;
 
+  // The title names the largest drop between two neighbouring grades.
+  // This adds the whole picture, the highest grade against the last one
+  // shown. Same caution applies: two groups counted in one year.
+  const peak = ordered.reduce((a, b) => (b.total > a.total ? b : a), ordered[0]);
+  const last = ordered[ordered.length - 1];
+  const below = peak.total ? Math.round(((peak.total - last.total) / peak.total) * 100) : 0;
+  const finding = ordered.length >= 3 && peak.grade !== last.grade && below > 0
+    ? `Enrollment is highest in ${peak.grade} at ${peak.total.toLocaleString()} learners. ${last.grade} has ${below}% fewer.`
+    : undefined;
+
   return (
     <Card
+      finding={finding}
       title={
         gap
           ? `The largest drop is ${gap.from} to ${gap.to}, with ${gap.pct}% fewer learners`

@@ -70,11 +70,23 @@ export default function StrandGenderSection({ filters }: { filters: Filters }) {
     ? `${widest.strand} has the widest gender gap, ${Math.round(Math.max(widest.femalePct, widest.malePct))}% ${widest.femalePct > 50 ? 'girls' : 'boys'}`
     : 'Strand enrollment by gender';
 
+  // Second sentence of the story. How many strands lean toward girls,
+  // and which way the largest strand leans.
+  const girlsLead = rows.filter((r) => r.Female > r.Male).length;
+  const big = rows.reduce((a, b) => (b.Male + b.Female > a.Male + a.Female ? b : a), rows[0]);
+  const bigLean = big.femalePct >= 50 ? 'girls' : 'boys';
+  const bigPct = Math.round(Math.max(big.femalePct, big.malePct));
+  const finding = `Girls outnumber boys in ${girlsLead} of ${rows.length} strands. ${Math.abs(big.femalePct - 50) < 1
+    ? `The largest strand, ${big.strand}, is split almost evenly.`
+    : `The largest strand, ${big.strand}, is ${bigPct}% ${bigLean}.`
+    }`;
+
   // Share labels inside the bars. Slices under 8% are too narrow to hold text.
   const pctLabel = (v: unknown) => (Number(v) >= 8 ? `${Math.round(Number(v))}%` : '');
 
   return (
     <Card
+      finding={finding}
       title={title}
       subtitle="Share of boys and girls in each senior high strand. The number beside each strand is its total learners. This is enrollment, not choice, because availability shapes it too."
     >
