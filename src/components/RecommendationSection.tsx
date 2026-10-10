@@ -122,7 +122,7 @@ export default function RecommendationSection({ filters }: { filters: Filters })
         `argue with than either one alone.`
       }
     >
-      <div style={{ display: 'grid', gap: 10 }}>
+      <div style={{ display: 'grid', gap: 8 }}>
         {picked.map((row, i) => (
           <RegionRow
             key={row.region}
@@ -134,14 +134,14 @@ export default function RecommendationSection({ filters }: { filters: Filters })
       </div>
 
       {onList && (
-        <p style={{ fontSize: 13, color: colors.ink, margin: '14px 0 0', lineHeight: 1.6 }}>
+        <p style={{ fontSize: 13, color: colors.ink, margin: '8px 0 0', lineHeight: 1.55 }}>
           You have <strong>{selected}</strong> selected. It is number{' '}
           {priority.regions.indexOf(selected!) + 1} on this list.
         </p>
       )}
 
       {priority.excluded.length > 0 && (
-        <p style={{ fontSize: 12.5, color: colors.inkSoft, margin: '14px 0 0', lineHeight: 1.6 }}>
+        <p style={{ fontSize: 12.5, color: colors.inkSoft, margin: '8px 0 0', lineHeight: 1.55 }}>
           {priority.excluded.join(', ')} scored low too, but on fewer than{' '}
           {priority.minSchools} senior high schools. That is a sample size and not a
           pattern, so it is set aside rather than ranked.

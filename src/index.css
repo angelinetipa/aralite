@@ -39,7 +39,7 @@ body {
 .aralite-pair {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0 24px;
+  gap: 0 14px;
   align-items: stretch;
 }
 

@@ -20,7 +20,7 @@ function StatCard({
   label, value, note, tone,
 }: { label: string; value: string; note?: string; tone?: string }) {
   return (
-    <div style={{ ...clay.card, padding: '1.1rem 1.2rem', textAlign: 'center' }}>
+    <div style={{ ...clay.card, padding: '0.7rem 0.9rem', textAlign: 'center' }}>
       <div style={{ fontSize: 13, color: colors.inkSoft, lineHeight: 1.35 }}>{label}</div>
       <div style={{
         fontSize: 25, fontWeight: 800, color: tone ?? colors.ink,
@@ -57,7 +57,7 @@ export default function StatCards({ filters }: { filters: Filters }) {
     <div style={{
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-      gap: 14, marginBottom: 24,
+      gap: 10, marginBottom: 14,
     }}>
       <StatCard label="Total learners" value={h.total.toLocaleString()} />
       <StatCard label="Schools" value={h.schools.toLocaleString()} />

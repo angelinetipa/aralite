@@ -47,15 +47,15 @@ export default function StorySection() {
     <div
       style={{
         ...clay.card,
-        padding: '1.7rem 1.8rem',
-        marginBottom: 28,
+        padding: '1.1rem 1.3rem',
+        marginBottom: 14,
         borderLeft: `5px solid ${colors.highlight}`,
       }}
     >
       <div
         style={{
           fontSize: 11, fontWeight: 800, letterSpacing: '0.08em',
-          textTransform: 'uppercase', color: colors.highlight, marginBottom: 10,
+          textTransform: 'uppercase', color: colors.highlight, marginBottom: 6,
         }}
       >
         The finding
@@ -74,7 +74,7 @@ export default function StorySection() {
       <p
         style={{
           fontSize: 14.5, color: colors.inkSoft, lineHeight: 1.6,
-          margin: '10px 0 0', maxWidth: '58ch',
+          margin: '6px 0 0', maxWidth: '58ch',
         }}
       >
         A learner can only enrol in a strand their own school runs.{' '}
@@ -87,9 +87,9 @@ export default function StorySection() {
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: 22,
-          margin: '24px 0 0',
-          paddingTop: 22,
+          gap: 14,
+          margin: '14px 0 0',
+          paddingTop: 12,
           borderTop: `1px solid ${colors.line}`,
         }}
       >

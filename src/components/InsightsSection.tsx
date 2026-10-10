@@ -30,26 +30,26 @@ export default function InsightsSection({ filters }: { filters: Filters }) {
   if (status !== 'ready' || items.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: 28 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
         <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Key findings</h2>
         <span style={{ fontSize: 13, color: colors.inkSoft }}>
           for {scopeLabel(filters)} · calculated from the data
         </span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8 }}>
         {items.map((it, i) => {
           const t = TONE[it.tone];
           return (
-            <div key={i} style={{ ...clay.card, padding: '1.1rem 1.3rem', borderLeft: `5px solid ${t.color}` }}>
+            <div key={i} style={{ ...clay.card, padding: '0.75rem 1rem', borderLeft: `5px solid ${t.color}` }}>
               <div style={{
                 fontSize: 11, fontWeight: 700, color: t.color,
                 textTransform: 'uppercase', letterSpacing: '0.04em',
               }}>
                 {t.label}
               </div>
-              <div style={{ fontSize: 15, fontWeight: 700, margin: '6px 0 6px', color: colors.ink }}>
+              <div style={{ fontSize: 15, fontWeight: 700, margin: '4px 0 4px', color: colors.ink }}>
                 {it.headline}
               </div>
               <div style={{ fontSize: 13.5, color: colors.inkSoft, lineHeight: 1.5 }}>

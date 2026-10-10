@@ -22,16 +22,16 @@ const LIMITS = [
 
 export default function DataNote() {
   return (
-    <div style={{ ...clay.card, padding: '1.4rem 1.5rem', margin: '28px 0 20px' }}>
-      <h3 style={{ fontSize: 17, fontWeight: 800, margin: '0 0 14px' }}>About this data</h3>
+    <div style={{ ...clay.card, padding: '1rem 1.2rem', margin: '16px 0 12px' }}>
+      <h3 style={{ fontSize: 17, fontWeight: 800, margin: '0 0 8px' }}>About this data</h3>
 
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: 14,
-          paddingBottom: 16,
-          marginBottom: 16,
+          gap: 10,
+          paddingBottom: 10,
+          marginBottom: 10,
           borderBottom: `1px solid ${colors.line}`,
         }}
       >
@@ -69,19 +69,19 @@ export default function DataNote() {
 
       <ul style={{ margin: 0, paddingLeft: 18, color: colors.inkSoft }}>
         {LIMITS.map((l) => (
-          <li key={l} style={{ fontSize: 13.5, lineHeight: 1.6, marginBottom: 6 }}>
+          <li key={l} style={{ fontSize: 13.5, lineHeight: 1.55, marginBottom: 3 }}>
             {l}
           </li>
         ))}
       </ul>
 
-      <p style={{ fontSize: 12.5, color: colors.inkSoft, margin: '14px 0 0', lineHeight: 1.6 }}>
+      <p style={{ fontSize: 12.5, color: colors.inkSoft, margin: '8px 0 0', lineHeight: 1.55 }}>
         <strong style={{ color: colors.ink }}>Nothing was deleted.</strong> The cleaning script only
         repairs values and adds standardized copies beside them, so every original figure is still
         there and any number here can be traced back to the source file.
       </p>
 
-      <p style={{ fontSize: 12.5, color: colors.inkSoft, margin: '10px 0 0', lineHeight: 1.6 }}>
+      <p style={{ fontSize: 12.5, color: colors.inkSoft, margin: '6px 0 0', lineHeight: 1.55 }}>
         Cleaned with Python and pandas, stored as Parquet, queried with DuckDB-WASM. Aralite grew out
         of a university course case study and is an independent project, not affiliated with the
         Department of Education.

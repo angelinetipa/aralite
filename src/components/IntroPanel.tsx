@@ -7,7 +7,7 @@ import { colors, clay } from '../constants/theme';
 
 export default function IntroPanel() {
   return (
-    <div style={{ ...clay.card, padding: '1.5rem 1.6rem', marginBottom: 24 }}>
+    <div style={{ ...clay.card, padding: '1rem 1.2rem', marginBottom: 14 }}>
       <h2
         style={{
           fontSize: 22,
@@ -20,7 +20,7 @@ export default function IntroPanel() {
         Where 27 million Filipino learners go to school.
       </h2>
 
-      <p style={{ fontSize: 14.5, color: colors.inkSoft, lineHeight: 1.6, margin: '10px 0 0', maxWidth: '68ch' }}>
+      <p style={{ fontSize: 14.5, color: colors.inkSoft, lineHeight: 1.6, margin: '6px 0 0', maxWidth: '68ch' }}>
         Aralite turns the Department of Education&rsquo;s enrollment file for school year
         2023 to 2024 into a dashboard. It covers{' '}
         <strong style={{ color: colors.ink }}>60,167 schools</strong> and{' '}
@@ -28,7 +28,7 @@ export default function IntroPanel() {
         entirely in your browser.
       </p>
 
-      <p style={{ fontSize: 14, color: colors.inkSoft, lineHeight: 1.6, margin: '8px 0 0', maxWidth: '68ch' }}>
+      <p style={{ fontSize: 14, color: colors.inkSoft, lineHeight: 1.6, margin: '4px 0 0', maxWidth: '68ch' }}>
         Start with the main finding below. Then pick your own region to compare it with
         the country.
       </p>

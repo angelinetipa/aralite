@@ -49,10 +49,10 @@ export default function FilterBar({
 
   return (
     <div style={{
-      background: '#FFFFFF', padding: '1rem 1.2rem', borderRadius: 16,
+      background: '#FFFFFF', padding: '0.7rem 1rem', borderRadius: 16,
       border: '1px solid rgba(0,0,0,0.05)',
       boxShadow: '0 6px 16px rgba(31,29,26,0.06)',
-      marginBottom: 20,
+      marginBottom: 12,
     }}>
       <div style={{
         display: 'grid',
@@ -86,7 +86,7 @@ export default function FilterBar({
       {anyActive && (
         <div style={{
           display: 'flex', justifyContent: 'flex-end',
-          marginTop: 12, paddingTop: 12, borderTop: `1px solid ${colors.line}`,
+          marginTop: 8, paddingTop: 8, borderTop: `1px solid ${colors.line}`,
         }}>
           <button
             onClick={() => onChange({})}

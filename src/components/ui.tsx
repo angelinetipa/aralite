@@ -11,12 +11,12 @@ export function Card({ title, subtitle, children }: {
   children: ReactNode;
 }) {
   return (
-    <div style={{ ...clay.card, padding: '1.4rem 1.6rem', marginBottom: 24 }}>
+    <div style={{ ...clay.card, padding: '0.9rem 1.1rem', marginBottom: 14 }}>
       <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: colors.ink }}>{title}</h2>
       {subtitle && (
-        <p style={{ color: colors.inkSoft, fontSize: 14, margin: '6px 0 0' }}>{subtitle}</p>
+        <p style={{ color: colors.inkSoft, fontSize: 14, margin: '3px 0 0' }}>{subtitle}</p>
       )}
-      <div style={{ marginTop: 16 }}>{children}</div>
+      <div style={{ marginTop: 10 }}>{children}</div>
     </div>
   );
 }
@@ -40,8 +40,8 @@ export function ChartNote({ children }: { children: ReactNode }) {
         fontSize: 13.5,
         color: colors.inkSoft,
         lineHeight: 1.65,
-        margin: '16px 0 0',
-        paddingTop: 14,
+        margin: '10px 0 0',
+        paddingTop: 8,
         borderTop: `1px solid ${colors.line}`,
         maxWidth: '70ch',
       }}
@@ -59,7 +59,7 @@ export function Disclosure({
   summary, children,
 }: { summary: string; children: React.ReactNode }) {
   return (
-    <details style={{ marginTop: 12 }}>
+    <details style={{ marginTop: 8 }}>
       <summary
         style={{
           cursor: 'pointer', fontSize: 12.5, fontWeight: 600,

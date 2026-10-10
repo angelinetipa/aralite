@@ -40,18 +40,18 @@ import DataNote from '../components/DataNote';
 
 function ActLabel({ kicker, title, blurb }: { kicker: string; title: string; blurb?: string }) {
   return (
-    <div style={{ margin: '38px 0 16px' }}>
+    <div style={{ margin: '22px 0 10px' }}>
       <div
         style={{
           fontSize: 11, fontWeight: 800, letterSpacing: '0.08em',
-          textTransform: 'uppercase', color: colors.inkSoft, marginBottom: 6,
+          textTransform: 'uppercase', color: colors.inkSoft, marginBottom: 3,
         }}
       >
         {kicker}
       </div>
       <h2 style={{ fontSize: 19, fontWeight: 800, margin: 0, color: colors.ink }}>{title}</h2>
       {blurb && (
-        <p style={{ fontSize: 13.5, color: colors.inkSoft, margin: '6px 0 0', maxWidth: '62ch', lineHeight: 1.6 }}>
+        <p style={{ fontSize: 13.5, color: colors.inkSoft, margin: '3px 0 0', maxWidth: '62ch', lineHeight: 1.6 }}>
           {blurb}
         </p>
       )}
@@ -71,12 +71,12 @@ export default function DashboardPage() {
   const scope = scopeLabel(filters);
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem 2rem', color: colors.ink }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '1.2rem 1.5rem', color: colors.ink }}>
       <NavHeader />
 
       {/* Shown before the spinner, so a visitor can read what this is
           while DuckDB and the parquet files load. */}
-      <div style={{ marginTop: '1.5rem' }}>
+      <div style={{ marginTop: '0.8rem' }}>
         <IntroPanel />
       </div>
 
@@ -112,20 +112,20 @@ export default function DashboardPage() {
           blurb="Pick a region to compare it with the country. You can go down to a single barangay."
         />
         <FilterBar filters={filters} onChange={setFilters} />
-        <p style={{ fontSize: 14, color: colors.inkSoft, margin: '0 0 20px' }}>
+        <p style={{ fontSize: 14, color: colors.inkSoft, margin: '0 0 12px' }}>
           Showing data for <strong style={{ color: colors.ink }}>{scope}</strong>
         </p>
         <StatCards filters={filters} />
         <SchoolPanel filters={filters} />
 
         {/* ---- Context, closed by default ------------------------------- */}
-        <div style={{ margin: '14px 0 0' }}>
+        <div style={{ margin: '4px 0 0' }}>
           <button
             onClick={() => setShowContext((v) => !v)}
             aria-expanded={showContext}
             style={{
               width: '100%', textAlign: 'left', cursor: 'pointer',
-              padding: '1rem 1.2rem', borderRadius: 16,
+              padding: '0.7rem 1rem', borderRadius: 16,
               border: `1px dashed ${colors.line}`, background: 'transparent',
               display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16,
             }}
@@ -148,7 +148,7 @@ export default function DashboardPage() {
           <div
             style={{
               display: 'grid', gridTemplateColumns: 'minmax(260px, 340px) 1fr',
-              gap: 24, alignItems: 'start', marginTop: 22,
+              gap: 14, alignItems: 'start', marginTop: 12,
             }}
             className="aralite-cols aralite-context"
           >
@@ -178,7 +178,7 @@ export default function DashboardPage() {
         <DataNote />
       </div>
 
-      <p style={{ color: colors.inkSoft, fontSize: 12, textAlign: 'center', margin: '8px 0 24px' }}>
+      <p style={{ color: colors.inkSoft, fontSize: 12, textAlign: 'center', margin: '4px 0 12px' }}>
         Data: DepEd Learner Information System, SY 2023–2024 · Built with DuckDB-WASM + React
       </p>
     </div>
