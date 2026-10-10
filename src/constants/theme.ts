@@ -6,6 +6,8 @@
 //   highlight -> the one thing the reader should look at.
 //   worse     -> worse than the national figure. Nothing else is red.
 //   better    -> better than the national figure.
+//   male      -> boys, in the gender chart only.
+//   female    -> girls, in the gender chart only.
 //
 // The flag colors (blue, red, yellow) stay for the brand strip and
 // badges. Charts should use the semantic tokens below, not raw colors.
@@ -29,6 +31,12 @@ export const colors = {
   highlight: '#0038A8',  // the one thing to look at
   worse: '#CE1126',      // worse than national
   better: '#9BB4DB',     // better than national
+
+  // Gender. Boys use the brand blue, girls a lighter shade of it, so
+  // the chart stays in the same family as the rest of the page. Red is
+  // never used here. Both hold white text at 4.5:1 or better.
+  male: '#0038A8',
+  female: '#3F6FCB',
 } as const;
 
 // Claymorphism-lite: rounded, soft drop shadow, faint top highlight.
