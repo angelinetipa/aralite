@@ -7,8 +7,8 @@
 //   evidence  two charts that support it, beside the finding
 //   so what   where to act first, as a strip under the charts
 //             (finding, evidence and so what share one screen)
-//   explore   the filter, and everything that follows it
-//   context   six more charts, collapsed by default
+//   explore   one panel with the filter and four numbers, then the
+//             six more charts (collapsed) and the school list
 //   tools     ask the data yourself
 //   limits    what none of it can tell you
 //
@@ -18,14 +18,13 @@
 
 import { useEffect, useState } from 'react';
 import { getDB } from '../lib/db';
-import { type Filters, scopeLabel } from '../lib/filters';
+import { type Filters } from '../lib/filters';
 import { colors } from '../constants/theme';
 import NavHeader from '../components/NavHeader';
 import Spinner from '../components/Spinner';
 import IntroPanel from '../components/IntroPanel';
-import FilterBar from '../components/FilterBar';
+import ExplorePanel from '../components/ExplorePanel';
 import SchoolPanel from '../components/SchoolPanel';
-import StatCards from '../components/StatCards';
 import StorySection from '../components/StorySection';
 import AvailabilitySection from '../components/AvailabilitySection';
 import RecommendationSection from '../components/RecommendationSection';
@@ -68,8 +67,6 @@ export default function DashboardPage() {
     getDB().then(() => setReady(true)).catch(() => setReady(true));
   }, []);
 
-  const scope = scopeLabel(filters);
-
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '1.2rem 1.5rem', color: colors.ink }}>
       <NavHeader />
@@ -96,46 +93,18 @@ export default function DashboardPage() {
         <RecommendationSection filters={filters} />
 
         {/* ---- Explore your area (responds to the filter) --------------- */}
-        <ActLabel
-          kicker="Explore your area"
-          title="Compare your area with the country"
-          blurb="Pick a region to compare it with the country. You can go down to a single barangay."
+        {/* One panel holds the filter, the four numbers and the button
+            that opens the six background charts. */}
+        <ExplorePanel
+          filters={filters}
+          onChange={setFilters}
+          showMore={showContext}
+          onToggleMore={() => setShowContext((v) => !v)}
         />
-        <FilterBar filters={filters} onChange={setFilters} />
-        <p style={{ fontSize: 14, color: colors.inkSoft, margin: '0 0 12px' }}>
-          Showing data for <strong style={{ color: colors.ink }}>{scope}</strong>
-        </p>
-        <StatCards filters={filters} />
-        <SchoolPanel filters={filters} />
 
         {/* ---- Context, closed by default ------------------------------- */}
-        <div style={{ margin: '4px 0 0' }}>
-          <button
-            onClick={() => setShowContext((v) => !v)}
-            aria-expanded={showContext}
-            style={{
-              width: '100%', textAlign: 'left', cursor: 'pointer',
-              padding: '0.7rem 1rem', borderRadius: 16,
-              border: `1px dashed ${colors.line}`, background: 'transparent',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16,
-            }}
-          >
-            <span>
-              <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: colors.ink }}>
-                {showContext ? 'Hide the rest of the data' : 'Show the rest of the data'}
-              </span>
-              <span style={{ display: 'block', fontSize: 13, color: colors.inkSoft, marginTop: 3 }}>
-                Six more charts for {scope}, each with its own key finding. They add background and do not argue the main finding.
-              </span>
-            </span>
-            <span style={{ fontSize: 20, color: colors.inkSoft, lineHeight: 1 }}>
-              {showContext ? '−' : '+'}
-            </span>
-          </button>
-        </div>
-
         {showContext && (
-          <div className="aralite-grid2 aralite-context" style={{ marginTop: 12 }}>
+          <div className="aralite-grid2 aralite-context" style={{ marginBottom: 14 }}>
             <div>
               <StrandsSection filters={filters} />
               <OfferingSection filters={filters} />
@@ -148,6 +117,9 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+
+        {/* The schools in the area. Shows only once something is picked. */}
+        <SchoolPanel filters={filters} />
 
         {/* ---- Tools ---------------------------------------------------- */}
         <ActLabel
