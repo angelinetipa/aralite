@@ -22,21 +22,24 @@ import { type Filters } from '../lib/filters';
 import { colors } from '../constants/theme';
 import { Card, ErrorState, Disclosure } from './ui';
 
-// A compact card per region. Rank and name on top, the two numbers
-// below, then the size of the region in one small line.
+// A compact card per region, everything centered. Rank and name on top,
+// then the two numbers side by side with a thin divider, then the size
+// of the region in one small line. Each label says in plain words what
+// the number counts.
 function RegionRow({
   rank, row, active,
 }: { rank: number; row: AvailabilityRegionRow; active: boolean }) {
   return (
     <div
       style={{
-        padding: '10px 12px',
+        padding: '12px 12px 10px',
         borderRadius: 14,
+        textAlign: 'center',
         background: active ? '#F4F1E9' : 'transparent',
         border: `1px solid ${active ? colors.ink : colors.line}`,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
         <div
           style={{
             flexShrink: 0,
@@ -54,25 +57,38 @@ function RegionRow({
         >
           {rank}
         </div>
-        <div style={{ fontSize: 14.5, fontWeight: 700, color: colors.ink }}>{row.region}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: colors.ink }}>{row.region}</div>
       </div>
 
-      <div style={{ display: 'flex', gap: 18, marginTop: 8 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1px 1fr',
+          alignItems: 'center',
+          columnGap: 12,
+          marginTop: 10,
+        }}
+      >
         <div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: colors.worse, lineHeight: 1.1 }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: colors.worse, lineHeight: 1.1 }}>
             {row.pctLearnersOneStrand.toFixed(1)}%
           </div>
-          <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 2 }}>no alternative</div>
+          <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 3, lineHeight: 1.3 }}>
+            of learners attend a one strand school
+          </div>
         </div>
+        <div style={{ width: 1, alignSelf: 'stretch', background: colors.line }} />
         <div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: colors.ink, lineHeight: 1.1 }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: colors.ink, lineHeight: 1.1 }}>
             {row.avgStrands.toFixed(2)}
           </div>
-          <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 2 }}>strands run</div>
+          <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 3, lineHeight: 1.3 }}>
+            strands per school on average
+          </div>
         </div>
       </div>
 
-      <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 6 }}>
+      <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 10 }}>
         {row.schools.toLocaleString()} schools · {row.learners.toLocaleString()} learners
       </div>
     </div>
@@ -108,6 +124,7 @@ export default function RecommendationSection({ filters }: { filters: Filters })
 
   return (
     <Card
+      kicker="So what"
       title={`If strand offerings can only be widened in ${picked.length} regions, these are the ${picked.length}`}
       subtitle={
         `${listed} rank worst on both measures. They run the fewest strands per school ` +

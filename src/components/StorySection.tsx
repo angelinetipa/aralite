@@ -56,7 +56,9 @@ export default function StorySection() {
         ...clay.card,
         padding: '1.1rem 1.3rem',
         marginBottom: 14,
-        borderLeft: `5px solid ${colors.highlight}`,
+        borderTop: `4px solid ${colors.highlight}`,
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       <div
@@ -93,6 +95,8 @@ export default function StorySection() {
       <div
         style={{
           display: 'grid',
+          flex: 1,
+          alignContent: 'space-around',
           gap: 10,
           margin: '12px 0 0',
           paddingTop: 12,
@@ -101,11 +105,11 @@ export default function StorySection() {
       >
         <Figure
           value={data.avgStrands.toFixed(2)}
-          label="tracks and strands per school, of 8"
+          label="strands per school on average, out of 8"
         />
         <Figure
           value={`${data.pctLearnersOneStrand.toFixed(1)}%`}
-          label="of senior high learners have no strand alternative"
+          label="of senior high learners attend a one strand school"
         />
         <Figure
           value={data.oneStrandSchools.toLocaleString()}

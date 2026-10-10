@@ -99,7 +99,7 @@ export default function AvailabilitySection({
   const subtitle = `${spec.what} Red marks the ${priority.length} regions to widen first.`;
 
   return (
-    <Card title={title} subtitle={subtitle}>
+    <Card kicker="The evidence" title={title} subtitle={subtitle}>
       <div style={{ height: data.length * 19 + 80 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart

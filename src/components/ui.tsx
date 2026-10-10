@@ -5,13 +5,34 @@
 import type { ReactNode } from 'react';
 import { colors, clay } from '../constants/theme';
 
-export function Card({ title, subtitle, children }: {
+// A card with a kicker gets a blue top border and a small label above the
+// title, the same marker the finding card uses. Cards without a kicker stay
+// plain. Use it only for the cards that make up the argument.
+export function Card({ title, subtitle, kicker, children }: {
   title: string;
   subtitle?: string;
+  kicker?: string;
   children: ReactNode;
 }) {
   return (
-    <div style={{ ...clay.card, padding: '0.9rem 1.1rem', marginBottom: 14 }}>
+    <div
+      style={{
+        ...clay.card,
+        padding: '0.9rem 1.1rem',
+        marginBottom: 14,
+        ...(kicker ? { borderTop: `4px solid ${colors.highlight}` } : null),
+      }}
+    >
+      {kicker && (
+        <div
+          style={{
+            fontSize: 11, fontWeight: 800, letterSpacing: '0.08em',
+            textTransform: 'uppercase', color: colors.highlight, marginBottom: 6,
+          }}
+        >
+          {kicker}
+        </div>
+      )}
       <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: colors.ink }}>{title}</h2>
       {subtitle && (
         <p style={{ color: colors.inkSoft, fontSize: 14, margin: '3px 0 0' }}>{subtitle}</p>

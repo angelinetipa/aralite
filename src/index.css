@@ -40,7 +40,7 @@ body {
    the charts share the second. Below 700px everything stacks. */
 .aralite-top {
   display: grid;
-  grid-template-columns: minmax(250px, 0.8fr) 1fr 1fr;
+  grid-template-columns: minmax(220px, 0.62fr) 1fr 1fr;
   gap: 0 14px;
   align-items: stretch;
 }
