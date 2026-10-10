@@ -4,8 +4,9 @@
 // Order is an argument, not a layout:
 //   intro     what this is, in two sentences
 //   finding   the one claim, always national
-//   evidence  two charts that support it, side by side
-//   so what   where to act first, and what the data cannot decide
+//   evidence  two charts that support it, beside the finding
+//   so what   where to act first, as a strip under the charts
+//             (finding, evidence and so what share one screen)
 //   explore   the filter, and everything that follows it
 //   context   six more charts, collapsed by default
 //   tools     ask the data yourself
@@ -83,26 +84,16 @@ export default function DashboardPage() {
       {!ready && <Spinner />}
 
       <div style={{ display: ready ? 'block' : 'none' }}>
-        {/* ---- The finding (national) ----------------------------------- */}
-        <StorySection />
-
-        {/* ---- The evidence (national) ---------------------------------- */}
-        <ActLabel
-          kicker="The evidence"
-          title="Where strand availability is narrowest"
-          blurb="Both charts show the whole country. Red marks the regions to look at first."
-        />
-        <div className="aralite-pair">
+        {/* ---- Finding, evidence and so what (national) ------------------ */}
+        {/* One screen. The finding on the left, the two evidence charts
+            beside it, and the priority regions as a strip underneath. */}
+        <div className="aralite-top">
+          <div className="aralite-top-story">
+            <StorySection />
+          </div>
           <AvailabilitySection filters={filters} metric="avgStrands" />
           <AvailabilitySection filters={filters} metric="pctLearnersOneStrand" />
         </div>
-
-        {/* ---- So what (national) --------------------------------------- */}
-        <ActLabel
-          kicker="So what"
-          title="Where widening strand offerings would matter most"
-          blurb="The regions are calculated from the two charts above, not chosen by hand. The panel also says what this data cannot decide."
-        />
         <RecommendationSection filters={filters} />
 
         {/* ---- Explore your area (responds to the filter) --------------- */}

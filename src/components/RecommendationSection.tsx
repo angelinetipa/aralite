@@ -12,7 +12,8 @@
 // background and a dark border.
 //
 // Not filtered, for the same reason the evidence charts are not. This is
-// a national ranking.
+// a national ranking. It sits as a slim strip under the two charts, so
+// the finding, the evidence and this list share one screen.
 
 import { useEffect, useState } from 'react';
 import { getAvailabilityByRegion, type AvailabilityRegionRow } from '../lib/story';
@@ -21,65 +22,58 @@ import { type Filters } from '../lib/filters';
 import { colors } from '../constants/theme';
 import { Card, ErrorState, Disclosure } from './ui';
 
+// A compact card per region. Rank and name on top, the two numbers
+// below, then the size of the region in one small line.
 function RegionRow({
   rank, row, active,
 }: { rank: number; row: AvailabilityRegionRow; active: boolean }) {
   return (
     <div
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 14,
-        padding: '12px 14px',
+        padding: '10px 12px',
         borderRadius: 14,
         background: active ? '#F4F1E9' : 'transparent',
         border: `1px solid ${active ? colors.ink : colors.line}`,
       }}
     >
-      <div
-        style={{
-          flexShrink: 0,
-          width: 28,
-          height: 28,
-          borderRadius: 10,
-          background: colors.worse,
-          color: '#fff',
-          fontSize: 13,
-          fontWeight: 800,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {rank}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div
+          style={{
+            flexShrink: 0,
+            width: 22,
+            height: 22,
+            borderRadius: 7,
+            background: colors.worse,
+            color: '#fff',
+            fontSize: 12,
+            fontWeight: 800,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {rank}
+        </div>
+        <div style={{ fontSize: 14.5, fontWeight: 700, color: colors.ink }}>{row.region}</div>
       </div>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: colors.ink }}>
-          {row.region}
+      <div style={{ display: 'flex', gap: 18, marginTop: 8 }}>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: colors.worse, lineHeight: 1.1 }}>
+            {row.pctLearnersOneStrand.toFixed(1)}%
+          </div>
+          <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 2 }}>no alternative</div>
         </div>
-        <div style={{ fontSize: 12.5, color: colors.inkSoft, marginTop: 2 }}>
-          {row.schools.toLocaleString()} senior high schools ·{' '}
-          {row.learners.toLocaleString()} learners
-        </div>
-      </div>
-
-      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-        <div style={{ fontSize: 19, fontWeight: 800, color: colors.worse, lineHeight: 1.1 }}>
-          {row.pctLearnersOneStrand.toFixed(1)}%
-        </div>
-        <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 2 }}>
-          no alternative
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: colors.ink, lineHeight: 1.1 }}>
+            {row.avgStrands.toFixed(2)}
+          </div>
+          <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 2 }}>strands run</div>
         </div>
       </div>
 
-      <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 74 }}>
-        <div style={{ fontSize: 19, fontWeight: 800, color: colors.ink, lineHeight: 1.1 }}>
-          {row.avgStrands.toFixed(2)}
-        </div>
-        <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 2 }}>
-          strands run
-        </div>
+      <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 6 }}>
+        {row.schools.toLocaleString()} schools · {row.learners.toLocaleString()} learners
       </div>
     </div>
   );
@@ -116,13 +110,11 @@ export default function RecommendationSection({ filters }: { filters: Filters })
     <Card
       title={`If strand offerings can only be widened in ${picked.length} regions, these are the ${picked.length}`}
       subtitle={
-        `${listed} rank worst on both measures. They run the fewest strands per school, ` +
-        `and they have the largest share of learners whose school runs only one. Two ` +
-        `rankings built from different numbers pointing at the same places is harder to ` +
-        `argue with than either one alone.`
+        `${listed} rank worst on both measures. They run the fewest strands per school ` +
+        `and have the largest share of learners whose school runs only one.`
       }
     >
-      <div style={{ display: 'grid', gap: 8 }}>
+      <div className="aralite-strip">
         {picked.map((row, i) => (
           <RegionRow
             key={row.region}

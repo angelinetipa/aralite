@@ -96,17 +96,17 @@ export default function AvailabilitySection({
     ? `The average school runs ${nat.toFixed(1)} of 8 strands. In ${worst.region} it is ${worst.avgStrands.toFixed(1)}`
     : `Learners in ${worst.region} are ${(worst[metric] / best[metric]).toFixed(0)}× more likely than in ${best.region} to attend a one strand school`;
 
-  const subtitle = `${spec.what} Red marks the ${priority.length} regions to widen first. This counts what schools run, not what learners wanted.`;
+  const subtitle = `${spec.what} Red marks the ${priority.length} regions to widen first.`;
 
   return (
     <Card title={title} subtitle={subtitle}>
-      <div style={{ height: 470 }}>
+      <div style={{ height: data.length * 19 + 80 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
             layout="vertical"
-            barCategoryGap={6}
-            margin={{ top: 26, right: 40, bottom: 24, left: 4 }}
+            barCategoryGap={4}
+            margin={{ top: 24, right: 38, bottom: 24, left: 0 }}
           >
             <XAxis
               type="number"
@@ -123,7 +123,7 @@ export default function AvailabilitySection({
               }}
             />
             <YAxis
-              type="category" dataKey="region" width={96} interval={0}
+              type="category" dataKey="region" width={86} interval={0}
               axisLine={{ stroke: colors.line }} tickLine={false}
               tick={{ fontSize: 11.5, fill: colors.ink }}
             />

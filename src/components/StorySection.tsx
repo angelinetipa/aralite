@@ -17,13 +17,20 @@ import { ErrorState, Disclosure } from './ui';
 const WRITEUP =
   'https://github.com/angelinetipa/aralite/tree/main/analysis/strand-availability';
 
+// One figure per row, number on the left and its meaning beside it.
+// This fits the narrow left column without squeezing the labels.
 function Figure({ value, label }: { value: string; label: string }) {
   return (
-    <div>
-      <div style={{ fontSize: 34, fontWeight: 800, lineHeight: 1.05, color: colors.ink }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div
+        style={{
+          fontSize: 26, fontWeight: 800, lineHeight: 1.05, color: colors.ink,
+          minWidth: 78, flexShrink: 0,
+        }}
+      >
         {value}
       </div>
-      <div style={{ fontSize: 12.5, color: colors.inkSoft, marginTop: 5, lineHeight: 1.4 }}>
+      <div style={{ fontSize: 12.5, color: colors.inkSoft, lineHeight: 1.35 }}>
         {label}
       </div>
     </div>
@@ -63,8 +70,8 @@ export default function StorySection() {
 
       <h2
         style={{
-          fontSize: 23, fontWeight: 800, lineHeight: 1.32,
-          margin: 0, color: colors.ink, maxWidth: '46ch',
+          fontSize: 20, fontWeight: 800, lineHeight: 1.3,
+          margin: 0, color: colors.ink,
         }}
       >
         The average senior high school runs {data.avgStrands.toFixed(1)} of the 8 tracks and
@@ -73,8 +80,8 @@ export default function StorySection() {
 
       <p
         style={{
-          fontSize: 14.5, color: colors.inkSoft, lineHeight: 1.6,
-          margin: '6px 0 0', maxWidth: '58ch',
+          fontSize: 13.5, color: colors.inkSoft, lineHeight: 1.55,
+          margin: '6px 0 0',
         }}
       >
         A learner can only enrol in a strand their own school runs.{' '}
@@ -86,9 +93,8 @@ export default function StorySection() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: 14,
-          margin: '14px 0 0',
+          gap: 10,
+          margin: '12px 0 0',
           paddingTop: 12,
           borderTop: `1px solid ${colors.line}`,
         }}

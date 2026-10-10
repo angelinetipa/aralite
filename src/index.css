@@ -33,20 +33,48 @@ body {
   }
 }
 
-/* Two charts side by side. Cards in the same row stretch to the same
-   height. Below 980px each chart gets its own row so the region labels
-   keep enough room. */
-.aralite-pair {
+/* Top of the page. The finding sits on the left and the two evidence
+   charts sit beside it, so the argument fits on one screen. The story
+   wrapper always renders, which keeps the charts in their columns while
+   the data loads. Below 1100px the finding takes the full first row and
+   the charts share the second. Below 700px everything stacks. */
+.aralite-top {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(250px, 0.8fr) 1fr 1fr;
   gap: 0 14px;
   align-items: stretch;
 }
 
-@media (max-width: 980px) {
-  .aralite-pair {
+.aralite-top-story {
+  display: flex;
+}
+
+.aralite-top-story>div {
+  flex: 1;
+}
+
+@media (max-width: 1100px) {
+  .aralite-top {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .aralite-top-story {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 700px) {
+  .aralite-top {
     grid-template-columns: 1fr;
   }
+}
+
+/* The priority regions as a slim strip. Four cards in one row on wide
+   screens, wrapping on narrow ones. */
+.aralite-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 8px;
 }
 
 /* Visual hierarchy: the story leads, context supports.
