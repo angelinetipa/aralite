@@ -2,17 +2,18 @@
 // The schools inside whatever the FilterBar currently selects.
 //
 // This was FinderSection, which carried its own five dropdowns and its
-// own filter state — a second filter that silently disagreed with the
-// dashboard's. All of that is gone. It receives filters as a prop, so it
-// can only ever show the same scope as the charts.
+// own filter state, a second filter that could silently disagree with
+// the dashboard's. It now receives filters as a prop, so it can only
+// ever show the same scope as the rest of the section.
 //
-// The name/ID search it used to accept is gone too. The heading now
-// states the real number of schools in scope and how many of them are
-// drawn, because the old "50+" gave the reader no way to tell whether
-// narrowing further would help.
+// The heading states the real number of schools in scope and how many
+// are drawn, so the reader can tell whether narrowing further will help.
 //
-// Renders nothing until a filter is set, so it stays out of the way of
-// the finding until a visitor actually goes looking.
+// Renders nothing until a filter is set, so it stays out of the way
+// until a visitor goes looking.
+//
+// Color. Everything here is neutral. Male and female are plain numbers
+// with no color, because red is reserved for "worse than national".
 
 import { useEffect, useState } from 'react';
 import {
@@ -23,11 +24,11 @@ import { type Filters, scopeLabel } from '../lib/filters';
 import { colors, clay } from '../constants/theme';
 import { Card } from './ui';
 
-function Metric({ label, value, c }: { label: string; value: string; c: string }) {
+function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ flex: 1, minWidth: 90 }}>
       <div style={{ fontSize: 12, color: colors.inkSoft }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 800, color: c }}>{value}</div>
+      <div style={{ fontSize: 22, fontWeight: 800, color: colors.ink }}>{value}</div>
     </div>
   );
 }
@@ -44,7 +45,7 @@ export default function SchoolPanel({ filters }: { filters: Filters }) {
       .catch(() => { setHits([]); setTotal(0); });
   }, [filters]);
 
-  // Only appears once the visitor has actually narrowed to something.
+  // Only appears once the visitor has narrowed to something.
   if (hits.length === 0) return null;
 
   const capped = total > SCHOOLS_SHOWN;
@@ -57,7 +58,6 @@ export default function SchoolPanel({ filters }: { filters: Filters }) {
           ? `The ${SCHOOLS_SHOWN} largest schools in ${scope}`
           : `${total} school${total === 1 ? '' : 's'} in ${scope}`
       }
-      accent={colors.blue}
       subtitle={
         capped
           ? `${scope} has ${total.toLocaleString()} schools in total. Narrow to a province, division, municipality, or barangay to see the rest.`
@@ -81,7 +81,7 @@ export default function SchoolPanel({ filters }: { filters: Filters }) {
                 {h.municipality}, {h.region} · {h.sector} · ID {h.id}
               </span>
             </span>
-            <span style={{ fontWeight: 700, color: colors.blue, whiteSpace: 'nowrap' }}>
+            <span style={{ fontWeight: 700, color: colors.ink, whiteSpace: 'nowrap' }}>
               {h.total.toLocaleString()}
             </span>
           </button>
@@ -107,6 +107,7 @@ export default function SchoolPanel({ filters }: { filters: Filters }) {
               </h3>
               <button
                 onClick={() => setProfile(null)}
+                aria-label="Close"
                 style={{ cursor: 'pointer', border: 'none', background: 'none', fontSize: 22 }}
               >
                 ×
@@ -119,9 +120,9 @@ export default function SchoolPanel({ filters }: { filters: Filters }) {
             </p>
 
             <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-              <Metric label="Total" value={profile.total.toLocaleString()} c={colors.blue} />
-              <Metric label="Male" value={profile.male.toLocaleString()} c={colors.blue} />
-              <Metric label="Female" value={profile.female.toLocaleString()} c={colors.red} />
+              <Metric label="Total" value={profile.total.toLocaleString()} />
+              <Metric label="Male" value={profile.male.toLocaleString()} />
+              <Metric label="Female" value={profile.female.toLocaleString()} />
             </div>
 
             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Enrollment by grade</div>
@@ -131,7 +132,7 @@ export default function SchoolPanel({ filters }: { filters: Filters }) {
                 <div key={g.grade} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
                   <span style={{ width: 44, fontSize: 12, color: colors.inkSoft }}>{g.grade}</span>
                   <div style={{ flex: 1, background: colors.line, borderRadius: 4, height: 16 }}>
-                    <div style={{ width: `${(g.total / max) * 100}%`, background: colors.blue, height: '100%', borderRadius: 4 }} />
+                    <div style={{ width: `${(g.total / max) * 100}%`, background: colors.grayDark, height: '100%', borderRadius: 4 }} />
                   </div>
                   <span style={{ width: 60, textAlign: 'right', fontSize: 12 }}>{g.total.toLocaleString()}</span>
                 </div>
