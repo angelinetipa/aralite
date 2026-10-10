@@ -1,20 +1,92 @@
 // src/components/RegionsSection.tsx
-// All 18 bars ranked. These are the country's 17 regions plus PSO,
-// Philippine Schools Overseas, which DepEd files in the Region column
-// but which is not a region. Clicking a bar filters the dashboard.
+// Learners by region as a treemap. Each tile's area is its share of the
+// country's learners, so the whole rectangle is the whole country.
+// These are the 17 regions plus PSO, Philippine Schools Overseas, which
+// DepEd files in the Region column but which is not a region.
+//
+// Why a treemap. The question here is "how big is each part of the
+// whole", and bars answer it with 18 rows and a lot of height. A treemap
+// answers it in one compact block, and the tiles are big enough to click.
+//
+// Reading it. Tiles with room show the region name and its learners.
+// A tight tile shows the short name, such as R VIII. The smallest tiles
+// show nothing, to avoid cramped text. Hover any tile for its name and
+// number.
 //
 // Color. Gray by default. Blue marks the selected region, or the largest
-// one when nothing is selected, so the title and the bar always match.
+// one when nothing is selected, so the title and the tile always match.
+// The selected region also gets a dark outline.
+//
+// Clicking a tile filters the whole dashboard to that region. Enter or
+// Space does the same for keyboard users.
 
 import { useEffect, useState } from 'react';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList,
-} from 'recharts';
+import { Treemap, Tooltip, ResponsiveContainer, type TreemapNode } from 'recharts';
 import { getTopRegions, type RegionRow } from '../lib/queries';
 import { type Filters } from '../lib/filters';
 import { compact, shareText } from '../lib/format';
 import { colors } from '../constants/theme';
 import { Card, ErrorState } from './ui';
+
+const CHART_HEIGHT = 300;
+
+// Draws one tile. Called by the Treemap for every node.
+function Tile({
+  node, marked, onPick,
+}: { node: TreemapNode; marked: string | undefined; onPick: (r: string) => void }) {
+  // The treemap also hands over its invisible root. It is not a region,
+  // so it draws nothing and cannot be clicked.
+  if (node.depth === 0) return <g />;
+
+  const { x, y, width, height, name, value } = node;
+  const isMarked = name === marked;
+  const textColor = isMarked ? '#fff' : colors.ink;
+
+  // Use the full name when it fits. Otherwise try the short form, "R VIII"
+  // for "Region VIII". If even that does not fit, show no name at all,
+  // since a cut off name such as "Regio…" tells the reader nothing.
+  const fits = (s: string) => s.length * 6.8 + 14 <= width;
+  const short = name.replace(/^Region /, 'R ');
+  const label = fits(name) ? name : fits(short) ? short : '';
+
+  // Text only goes where it fits. Name needs room across, the learner
+  // count also needs a second line of height.
+  const showName = label !== '' && height >= 30;
+  const showValue = label !== '' && height >= 50;
+
+  return (
+    <g
+      role="button"
+      tabIndex={0}
+      aria-label={`${name}, ${value.toLocaleString()} learners. Filter the dashboard to this region.`}
+      style={{ cursor: 'pointer', outline: 'none' }}
+      onClick={() => onPick(name)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onPick(name);
+        }
+      }}
+    >
+      <rect
+        x={x} y={y} width={width} height={height} rx={6}
+        fill={isMarked ? colors.highlight : colors.gray}
+        stroke={isMarked ? colors.ink : '#fff'}
+        strokeWidth={isMarked ? 2 : 1}
+      />
+      {showName && (
+        <text x={x + 8} y={y + 18} fontSize={12} fontWeight={700} fill={textColor}>
+          {label}
+        </text>
+      )}
+      {showValue && (
+        <text x={x + 8} y={y + 34} fontSize={11.5} fill={textColor} opacity={0.85}>
+          {compact(value)}
+        </text>
+      )}
+    </g>
+  );
+}
 
 export default function RegionsSection({
   filters, onPick,
@@ -49,53 +121,31 @@ export default function RegionsSection({
     ? `The three largest regions hold ${shareText(top3Share)} of learners. ${small.region} is the smallest region at ${compact(small.total)}.`
     : undefined;
 
+  // The treemap reads plain name and size fields, largest first.
+  const tiles = data.map((r) => ({ name: r.region, size: r.total }));
+
   return (
     <Card
       finding={finding}
       title={top ? `${top.region} has the most learners, ${pct}% of the country` : 'Enrollment by region'}
-      subtitle="Learners by region. Click a bar to filter the whole dashboard to that region."
+      subtitle="Tile size shows how many learners. Click a tile to filter the whole dashboard to that region. Hover a small tile to see its name."
     >
-      {/* 34px per row guarantees room for every label */}
-      <div style={{ height: Math.max(420, data.length * 34 + 40) }}>
+      <div style={{ height: CHART_HEIGHT }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={data} layout="vertical" barCategoryGap={6}
-            margin={{ top: 8, right: 52, bottom: 24, left: 4 }}
+          <Treemap
+            data={tiles}
+            dataKey="size"
+            nameKey="name"
+            nodeGap={3}
+            isAnimationActive={false}
+            content={(node) => <Tile node={node} marked={marked} onPick={onPick} />}
           >
-            <XAxis
-              type="number" tickFormatter={compact}
-              tick={{ fontSize: 11.5, fill: colors.inkSoft }}
-              axisLine={{ stroke: colors.line }} tickLine={{ stroke: colors.line }}
-              label={{
-                value: 'Learners', position: 'insideBottom', offset: -14,
-                style: { fontSize: 11.5, fill: colors.inkSoft },
-              }}
-            />
-            <YAxis
-              type="category" dataKey="region" width={104} interval={0}
-              axisLine={{ stroke: colors.line }} tickLine={false}
-              tick={{ fontSize: 11.5, fill: colors.ink }}
-            />
+            {/* Shows the region name first, then its learners. */}
             <Tooltip
-              cursor={{ fill: 'rgba(0,0,0,0.04)' }}
-              formatter={(v) => Number(v).toLocaleString()}
+              separator=", "
+              formatter={(v, n) => [`${Number(v).toLocaleString()} learners`, String(n)]}
             />
-            <Bar
-              dataKey="total" radius={[0, 4, 4, 0]}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              onClick={(d: any) => d?.region && onPick(d.region)}
-              style={{ cursor: 'pointer' }}
-            >
-              {data.map((row) => (
-                <Cell key={row.region} fill={row.region === marked ? colors.highlight : colors.gray} />
-              ))}
-              <LabelList
-                dataKey="total" position="right"
-                formatter={(v: unknown) => compact(Number(v))}
-                style={{ fontSize: 11.5, fill: colors.ink, fontWeight: 600 }}
-              />
-            </Bar>
-          </BarChart>
+          </Treemap>
         </ResponsiveContainer>
       </div>
     </Card>
