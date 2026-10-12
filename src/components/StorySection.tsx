@@ -23,6 +23,7 @@ function Figure({ value, label }: { value: string; label: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
       <div
+        className="aralite-display"
         style={{
           fontSize: 26, fontWeight: 800, lineHeight: 1.05, color: colors.ink,
           minWidth: 78, flexShrink: 0,

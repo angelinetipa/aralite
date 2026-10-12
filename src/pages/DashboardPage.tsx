@@ -2,7 +2,7 @@
 // The public dashboard. All data management lives at /admin.
 //
 // Order is an argument, not a layout:
-//   intro     what this is, in two sentences
+//   banner    the page header and what this is, in two sentences
 //   finding   the one claim, always national
 //   evidence  two charts that support it, beside the finding
 //   so what   where to act first, as a strip under the charts
@@ -20,9 +20,8 @@ import { useEffect, useState } from 'react';
 import { getDB } from '../lib/db';
 import { type Filters } from '../lib/filters';
 import { colors } from '../constants/theme';
-import NavHeader from '../components/NavHeader';
 import Spinner from '../components/Spinner';
-import IntroPanel from '../components/IntroPanel';
+import HeroBanner from '../components/HeroBanner';
 import ExplorePanel from '../components/ExplorePanel';
 import SchoolPanel from '../components/SchoolPanel';
 import StorySection from '../components/StorySection';
@@ -48,13 +47,10 @@ export default function DashboardPage() {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '1.2rem 1.5rem', color: colors.ink }}>
-      <NavHeader />
-
-      {/* Shown before the spinner, so a visitor can read what this is
-          while DuckDB and the parquet files load. */}
-      <div style={{ marginTop: '0.8rem' }}>
-        <IntroPanel />
-      </div>
+      {/* The banner holds the page header and the intro. It shows before
+          the spinner, so a visitor can read what this is while DuckDB and
+          the parquet files load. */}
+      <HeroBanner />
 
       {!ready && <Spinner />}
 

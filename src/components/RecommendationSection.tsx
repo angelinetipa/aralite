@@ -70,7 +70,7 @@ function RegionRow({
         }}
       >
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: colors.worse, lineHeight: 1.1 }}>
+          <div className="aralite-display" style={{ fontSize: 20, fontWeight: 800, color: colors.worse, lineHeight: 1.1 }}>
             {row.pctLearnersOneStrand.toFixed(1)}%
           </div>
           <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 3, lineHeight: 1.3 }}>
@@ -79,7 +79,7 @@ function RegionRow({
         </div>
         <div style={{ width: 1, alignSelf: 'stretch', background: colors.line }} />
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: colors.ink, lineHeight: 1.1 }}>
+          <div className="aralite-display" style={{ fontSize: 20, fontWeight: 800, color: colors.ink, lineHeight: 1.1 }}>
             {row.avgStrands.toFixed(2)}
           </div>
           <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 3, lineHeight: 1.3 }}>

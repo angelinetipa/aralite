@@ -42,6 +42,7 @@ function StatCard({
     >
       <div style={{ fontSize: 12.5, color: colors.inkSoft, lineHeight: 1.35 }}>{label}</div>
       <div
+        className="aralite-display"
         style={{
           fontSize: 25, fontWeight: 800, color: tone ?? colors.ink,
           marginTop: 6, whiteSpace: 'nowrap',

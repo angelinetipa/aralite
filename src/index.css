@@ -7,6 +7,17 @@
   box-sizing: border-box;
 }
 
+/* Headings and big numbers use Plus Jakarta Sans, bundled with the app
+   through @fontsource, so nothing is fetched from another site. Body
+   text and chart labels keep the system font, which keeps their widths
+   predictable. Big numbers opt in with the aralite-display class. */
+h1,
+h2,
+h3,
+.aralite-display {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
