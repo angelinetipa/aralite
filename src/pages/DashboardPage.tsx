@@ -61,15 +61,18 @@ export default function DashboardPage() {
       <div style={{ display: ready ? 'block' : 'none' }}>
         {/* ---- Finding, evidence and so what (national) ------------------ */}
         {/* One screen. The finding on the left, the two evidence charts
-            beside it, and the priority regions as a strip underneath. */}
-        <div className="aralite-top">
-          <div className="aralite-top-story">
-            <StorySection />
+            beside it, and the priority regions as a strip underneath, all
+            inside one tinted band. */}
+        <div className="aralite-band">
+          <div className="aralite-top">
+            <div className="aralite-top-story">
+              <StorySection />
+            </div>
+            <AvailabilitySection filters={filters} metric="avgStrands" />
+            <AvailabilitySection filters={filters} metric="pctLearnersOneStrand" />
           </div>
-          <AvailabilitySection filters={filters} metric="avgStrands" />
-          <AvailabilitySection filters={filters} metric="pctLearnersOneStrand" />
+          <RecommendationSection filters={filters} />
         </div>
-        <RecommendationSection filters={filters} />
 
         {/* ---- Explore your area (responds to the filter) --------------- */}
         {/* One panel holds the filter, the four numbers and the button
