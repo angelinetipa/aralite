@@ -76,8 +76,9 @@ export default function AskSection() {
 
   return (
     <Card
-      title="Ask the data"
-      subtitle="Type a question in plain English. Your AI key writes the SQL and it runs right here. It is read only, so nothing can change the data."
+      eyebrow="Ask it yourself"
+      title="Put a question to the data"
+      subtitle="Type a question in plain English. Your AI key writes the SQL and it runs right here. It is read only, so nothing can change the data. It looks at the whole dataset and ignores the filter above."
     >
       {/* Provider and key */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>

@@ -37,27 +37,6 @@ import OfferingSection from '../components/OfferingSection';
 import AskSection from '../components/AskSection';
 import DataNote from '../components/DataNote';
 
-function ActLabel({ kicker, title, blurb }: { kicker: string; title: string; blurb?: string }) {
-  return (
-    <div style={{ margin: '22px 0 10px' }}>
-      <div
-        style={{
-          fontSize: 11, fontWeight: 800, letterSpacing: '0.08em',
-          textTransform: 'uppercase', color: colors.inkSoft, marginBottom: 3,
-        }}
-      >
-        {kicker}
-      </div>
-      <h2 style={{ fontSize: 19, fontWeight: 800, margin: 0, color: colors.ink }}>{title}</h2>
-      {blurb && (
-        <p style={{ fontSize: 13.5, color: colors.inkSoft, margin: '3px 0 0', maxWidth: '62ch', lineHeight: 1.6 }}>
-          {blurb}
-        </p>
-      )}
-    </div>
-  );
-}
-
 export default function DashboardPage() {
   const [filters, setFilters] = useState<Filters>({});
   const [showContext, setShowContext] = useState(false);
@@ -122,11 +101,6 @@ export default function DashboardPage() {
         <SchoolPanel filters={filters} />
 
         {/* ---- Tools ---------------------------------------------------- */}
-        <ActLabel
-          kicker="Ask it yourself"
-          title="Put a question to the data"
-          blurb="Plain English in, SQL and results out. It queries the whole dataset and ignores the filter above."
-        />
         <AskSection />
 
         {/* ---- Limits --------------------------------------------------- */}

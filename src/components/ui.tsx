@@ -8,13 +8,19 @@ import { colors, clay } from '../constants/theme';
 // A card with a kicker gets a blue top border and a small label above the
 // title, the same marker the finding card uses. Cards without a kicker stay
 // plain. Use it only for the cards that make up the argument.
+// A card can have an eyebrow, a small gray label above the title that
+// names the section, such as "Ask it yourself". It has no border and no
+// color, so it never looks like part of the argument. The blue topped
+// kicker above is the one that does.
+//
 // A card can also carry a finding, one or two sentences the app worked
 // out from the data. It sits in a soft neutral box between the subtitle
 // and the chart, and it uses no color, so it never competes with the bars.
-export function Card({ title, subtitle, kicker, finding, children }: {
+export function Card({ title, subtitle, kicker, eyebrow, finding, children }: {
   title: string;
   subtitle?: string;
   kicker?: string;
+  eyebrow?: string;
   finding?: string;
   children: ReactNode;
 }) {
@@ -35,6 +41,16 @@ export function Card({ title, subtitle, kicker, finding, children }: {
           }}
         >
           {kicker}
+        </div>
+      )}
+      {eyebrow && !kicker && (
+        <div
+          style={{
+            fontSize: 11, fontWeight: 800, letterSpacing: '0.08em',
+            textTransform: 'uppercase', color: colors.inkSoft, marginBottom: 3,
+          }}
+        >
+          {eyebrow}
         </div>
       )}
       <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: colors.ink }}>{title}</h2>
