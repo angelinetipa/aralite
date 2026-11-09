@@ -7,6 +7,8 @@
 // counted in the same school year, and the wording must keep saying so.
 //
 // Color. A gray line, with one blue dot on the grade where the gap lands.
+//
+// Size. The chart fills its grid cell and never goes below MIN_HEIGHT.
 
 import { useEffect, useState } from 'react';
 import {
@@ -17,7 +19,9 @@ import { type Filters } from '../lib/filters';
 import { compact } from '../lib/format';
 import { largestGap, GRADE_ORDER } from '../lib/metrics';
 import { colors } from '../constants/theme';
-import { Card, ErrorState } from './ui';
+import { Card, ChartBox, ErrorState } from './ui';
+
+const MIN_HEIGHT = 240;
 
 export default function DropoffSection({ filters }: { filters: Filters }) {
   const [data, setData] = useState<GradeRow[]>([]);
@@ -65,7 +69,7 @@ export default function DropoffSection({ filters }: { filters: Filters }) {
           : 'Learners enrolled in each grade level.'
       }
     >
-      <div style={{ height: 320 }}>
+      <ChartBox min={MIN_HEIGHT}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={ordered} margin={{ top: 14, right: 20, bottom: 24, left: 8 }}>
             <XAxis
@@ -107,7 +111,7 @@ export default function DropoffSection({ filters }: { filters: Filters }) {
             )}
           </LineChart>
         </ResponsiveContainer>
-      </div>
+      </ChartBox>
     </Card>
   );
 }

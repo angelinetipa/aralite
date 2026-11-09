@@ -14,6 +14,9 @@
 //
 // dark switches the card to the navy look. Use it for at most two cards
 // on a page, placed on a diagonal, so the weight stays balanced.
+//
+// ChartBox is the chart area inside a card. It never shrinks below min,
+// and it stretches to the height the grid cell gives it.
 
 import type { CSSProperties, ReactNode } from 'react';
 import { colors, clay } from '../constants/theme';
@@ -88,6 +91,18 @@ export function Card({ title, subtitle, kicker, eyebrow, finding, dark = false, 
       )}
       {/* flex 1 lets the body take the leftover height of the cell. */}
       <div style={{ marginTop: 10, flex: 1, minHeight: 0 }}>{children}</div>
+    </div>
+  );
+}
+
+/**
+ * The chart area inside a Card. Pass the smallest height the chart can
+ * be read at. If the grid cell is taller, the chart stretches to fit.
+ */
+export function ChartBox({ min, children }: { min: number; children: ReactNode }) {
+  return (
+    <div style={{ position: 'relative', height: '100%', minHeight: min }}>
+      <div style={{ position: 'absolute', inset: 0 }}>{children}</div>
     </div>
   );
 }

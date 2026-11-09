@@ -4,13 +4,14 @@
 // This was FinderSection, which carried its own five dropdowns and its
 // own filter state, a second filter that could silently disagree with
 // the dashboard's. It now receives filters as a prop, so it can only
-// ever show the same scope as the rest of the section.
+// ever show the same scope as the rest of the page.
 //
 // The heading states the real number of schools in scope and how many
 // are drawn, so the reader can tell whether narrowing further will help.
 //
-// Renders nothing until a filter is set, so it stays out of the way
-// until a visitor goes looking.
+// Before a filter is set the card stays in place with a short note, so
+// the grid row keeps its shape. The list scrolls inside the card and
+// never makes the row taller than its neighbor.
 //
 // Color. Everything here is neutral. Male and female are plain numbers
 // with no color, because red is reserved for "worse than national".
@@ -22,7 +23,7 @@ import {
 } from '../lib/queries';
 import { type Filters, scopeLabel } from '../lib/filters';
 import { colors, clay } from '../constants/theme';
-import { Card } from './ui';
+import { Card, ChartBox } from './ui';
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
@@ -33,20 +34,48 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
+// A short centered note, used before a filter is set and while loading.
+function Note({ text }: { text: string }) {
+  return (
+    <div
+      style={{
+        height: '100%', minHeight: 120, display: 'flex',
+        alignItems: 'center', justifyContent: 'center',
+        color: colors.inkSoft, fontSize: 14, textAlign: 'center',
+      }}
+    >
+      {text}
+    </div>
+  );
+}
+
 export default function SchoolPanel({ filters }: { filters: Filters }) {
   const [hits, setHits] = useState<SchoolHit[]>([]);
   const [total, setTotal] = useState(0);
+  const [status, setStatus] = useState<'idle' | 'loading' | 'ready'>('idle');
   const [profile, setProfile] = useState<SchoolProfile | null>(null);
 
-  useEffect(() => {
-    if (!Object.values(filters).some(Boolean)) { setHits([]); setTotal(0); return; }
-    getSchools(filters)
-      .then((r) => { setHits(r.hits); setTotal(r.total); })
-      .catch(() => { setHits([]); setTotal(0); });
-  }, [filters]);
+  const picked = Object.values(filters).some(Boolean);
 
-  // Only appears once the visitor has narrowed to something.
-  if (hits.length === 0) return null;
+  useEffect(() => {
+    if (!picked) { setHits([]); setTotal(0); setStatus('idle'); return; }
+    setStatus('loading');
+    getSchools(filters)
+      .then((r) => { setHits(r.hits); setTotal(r.total); setStatus('ready'); })
+      .catch(() => { setHits([]); setTotal(0); setStatus('ready'); });
+  }, [filters, picked]);
+
+  // Nothing picked, or still loading, or nothing found.
+  if (!picked || status !== 'ready' || hits.length === 0) {
+    const text = !picked ? 'Pick a region to see its largest schools here.'
+      : status !== 'ready' ? 'Loading schools…'
+        : 'No schools found in this area.';
+    return (
+      <Card title="Schools in your area" subtitle="Click any school to see its enrollment profile.">
+        <Note text={text} />
+      </Card>
+    );
+  }
 
   const capped = total > SCHOOLS_SHOWN;
   const scope = scopeLabel(filters);
@@ -60,33 +89,36 @@ export default function SchoolPanel({ filters }: { filters: Filters }) {
       }
       subtitle={
         capped
-          ? `${scope} has ${total.toLocaleString()} schools in total. Narrow to a province, division, municipality, or barangay to see the rest.`
+          ? `${scope} has ${total.toLocaleString()} schools in total. Narrow the filter to see the rest.`
           : 'Click any school to see its full enrollment profile.'
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 420, overflowY: 'auto' }}>
-        {hits.map((h) => (
-          <button
-            key={h.id}
-            onClick={() => getSchoolProfile(h.id).then(setProfile).catch(() => { })}
-            style={{
-              ...clay.card, textAlign: 'left', cursor: 'pointer', border: 'none',
-              padding: '10px 14px', display: 'flex', justifyContent: 'space-between',
-              alignItems: 'center', gap: 12,
-            }}
-          >
-            <span>
-              <span style={{ fontWeight: 600, fontSize: 14 }}>{h.name}</span>
-              <span style={{ display: 'block', fontSize: 12, color: colors.inkSoft }}>
-                {h.municipality}, {h.region} · {h.sector} · ID {h.id}
+      {/* The list scrolls inside the card. */}
+      <ChartBox min={220}>
+        <div style={{ height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 4 }}>
+          {hits.map((h) => (
+            <button
+              key={h.id}
+              onClick={() => getSchoolProfile(h.id).then(setProfile).catch(() => { })}
+              style={{
+                ...clay.card, textAlign: 'left', cursor: 'pointer', border: 'none',
+                padding: '10px 14px', display: 'flex', justifyContent: 'space-between',
+                alignItems: 'center', gap: 12, flexShrink: 0,
+              }}
+            >
+              <span>
+                <span style={{ fontWeight: 600, fontSize: 14 }}>{h.name}</span>
+                <span style={{ display: 'block', fontSize: 12, color: colors.inkSoft }}>
+                  {h.municipality}, {h.region} · {h.sector} · ID {h.id}
+                </span>
               </span>
-            </span>
-            <span style={{ fontWeight: 700, color: colors.ink, whiteSpace: 'nowrap' }}>
-              {h.total.toLocaleString()}
-            </span>
-          </button>
-        ))}
-      </div>
+              <span style={{ fontWeight: 700, color: colors.ink, whiteSpace: 'nowrap' }}>
+                {h.total.toLocaleString()}
+              </span>
+            </button>
+          ))}
+        </div>
+      </ChartBox>
 
       {profile && (
         <div

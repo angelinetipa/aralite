@@ -2,6 +2,8 @@
 // What levels schools offer (Modified COC). Shows the shape of the school
 // system, which helps when planning where to add senior high or new
 // levels. Gray by default, blue on the most common type only.
+//
+// Size. The chart fills its grid cell and never goes below 26px per row.
 
 import { useEffect, useState } from 'react';
 import {
@@ -11,7 +13,7 @@ import { getByOffering, type OfferingRow } from '../lib/queries';
 import { type Filters } from '../lib/filters';
 import { compact, shareText } from '../lib/format';
 import { colors } from '../constants/theme';
-import { Card, ErrorState } from './ui';
+import { Card, ChartBox, ErrorState } from './ui';
 
 export default function OfferingSection({ filters }: { filters: Filters }) {
   const [data, setData] = useState<OfferingRow[]>([]);
@@ -48,7 +50,7 @@ export default function OfferingSection({ filters }: { filters: Filters }) {
       }
       subtitle="Number of schools by the levels they provide."
     >
-      <div style={{ height: Math.max(280, data.length * 40 + 40) }}>
+      <ChartBox min={data.length * 26 + 48}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data} layout="vertical" barCategoryGap={8}
@@ -64,7 +66,7 @@ export default function OfferingSection({ filters }: { filters: Filters }) {
               }}
             />
             <YAxis
-              type="category" dataKey="offering" width={140} interval={0}
+              type="category" dataKey="offering" width={120} interval={0}
               axisLine={{ stroke: colors.line }} tickLine={false}
               tick={{ fontSize: 11.5, fill: colors.ink }}
             />
@@ -84,7 +86,7 @@ export default function OfferingSection({ filters }: { filters: Filters }) {
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </ChartBox>
     </Card>
   );
 }

@@ -7,6 +7,8 @@
 // "pick", or "prefer".
 //
 // Color. Gray by default, blue on the largest strand only.
+//
+// Size. The chart fills its grid cell and never goes below MIN_HEIGHT.
 
 import { useEffect, useState } from 'react';
 import {
@@ -16,7 +18,9 @@ import { getByStrand, type StrandRow } from '../lib/queries';
 import { type Filters } from '../lib/filters';
 import { compact, shareText, joinNames } from '../lib/format';
 import { colors } from '../constants/theme';
-import { Card, ErrorState } from './ui';
+import { Card, ChartBox, ErrorState } from './ui';
+
+const MIN_HEIGHT = 220;
 
 export default function StrandsSection({ filters }: { filters: Filters }) {
   const [data, setData] = useState<StrandRow[]>([]);
@@ -53,9 +57,9 @@ export default function StrandsSection({ filters }: { filters: Filters }) {
           ? `${top.strand} has the most senior high learners, ${pct}% of the total`
           : 'Senior high enrollment by strand'
       }
-      subtitle="Learners enrolled in each strand. This is enrollment, not preference, because a learner can only enrol in a strand their school runs."
+      subtitle="Enrollment, not preference. A learner can only enrol in a strand their school runs."
     >
-      <div style={{ height: 340 }}>
+      <ChartBox min={MIN_HEIGHT}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data} layout="vertical" barCategoryGap={6}
@@ -71,7 +75,7 @@ export default function StrandsSection({ filters }: { filters: Filters }) {
               }}
             />
             <YAxis
-              type="category" dataKey="strand" width={96} interval={0}
+              type="category" dataKey="strand" width={84} interval={0}
               axisLine={{ stroke: colors.line }} tickLine={false}
               tick={{ fontSize: 11.5, fill: colors.ink }}
             />
@@ -91,7 +95,7 @@ export default function StrandsSection({ filters }: { filters: Filters }) {
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </ChartBox>
     </Card>
   );
 }

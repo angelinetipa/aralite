@@ -19,6 +19,8 @@
 //
 // Clicking a tile filters the whole dashboard to that region. Enter or
 // Space does the same for keyboard users.
+//
+// Size. The treemap fills its grid cell and never goes below MIN_HEIGHT.
 
 import { useEffect, useState } from 'react';
 import { Treemap, Tooltip, ResponsiveContainer, type TreemapNode } from 'recharts';
@@ -26,9 +28,9 @@ import { getTopRegions, type RegionRow } from '../lib/queries';
 import { type Filters } from '../lib/filters';
 import { compact, shareText } from '../lib/format';
 import { colors } from '../constants/theme';
-import { Card, ErrorState } from './ui';
+import { Card, ChartBox, ErrorState } from './ui';
 
-const CHART_HEIGHT = 300;
+const MIN_HEIGHT = 240;
 
 // Draws one tile. Called by the Treemap for every node.
 function Tile({
@@ -128,9 +130,9 @@ export default function RegionsSection({
     <Card
       finding={finding}
       title={top ? `${top.region} has the most learners, ${pct}% of the country` : 'Enrollment by region'}
-      subtitle="Tile size shows how many learners. Click a tile to filter the whole dashboard to that region. Hover a small tile to see its name."
+      subtitle="Tile size is learners. Click a tile to filter the page. Hover a small tile for its name."
     >
-      <div style={{ height: CHART_HEIGHT }}>
+      <ChartBox min={MIN_HEIGHT}>
         <ResponsiveContainer width="100%" height="100%">
           <Treemap
             data={tiles}
@@ -147,7 +149,7 @@ export default function RegionsSection({
             />
           </Treemap>
         </ResponsiveContainer>
-      </div>
+      </ChartBox>
     </Card>
   );
 }

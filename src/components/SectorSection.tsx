@@ -4,6 +4,9 @@
 // This was a donut. Bars are easier to compare and every sector gets a
 // direct label with its share, so no legend is needed. Gray by default,
 // blue on the largest sector only.
+//
+// Size. This card sits in the narrow 3 column slot. The chart fills its
+// cell and never goes below 4 rows of 34px.
 
 import { useEffect, useState } from 'react';
 import {
@@ -13,7 +16,7 @@ import { getBySector, type SectorRow } from '../lib/queries';
 import { type Filters } from '../lib/filters';
 import { compact, shareText } from '../lib/format';
 import { colors } from '../constants/theme';
-import { Card, ErrorState } from './ui';
+import { Card, ChartBox, ErrorState } from './ui';
 
 export default function SectorSection({ filters }: { filters: Filters }) {
   const [data, setData] = useState<SectorRow[]>([]);
@@ -55,13 +58,13 @@ export default function SectorSection({ filters }: { filters: Filters }) {
     <Card
       finding={finding}
       title={pub ? `Public schools hold ${pubPct}% of learners` : 'Learners by school sector'}
-      subtitle="Learners by sector. SUCs and LUCs are state and local universities and colleges. PSO is Philippine Schools Overseas."
+      subtitle="SUCs and LUCs are state and local colleges. PSO is schools overseas."
     >
-      <div style={{ height: Math.max(220, rows.length * 56 + 50) }}>
+      <ChartBox min={Math.max(190, rows.length * 34 + 50)}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={rows} layout="vertical" barCategoryGap={10}
-            margin={{ top: 8, right: 84, bottom: 24, left: 4 }}
+            margin={{ top: 8, right: 72, bottom: 24, left: 4 }}
           >
             <XAxis
               type="number" tickFormatter={compact}
@@ -73,7 +76,7 @@ export default function SectorSection({ filters }: { filters: Filters }) {
               }}
             />
             <YAxis
-              type="category" dataKey="sector" width={84} interval={0}
+              type="category" dataKey="sector" width={66} interval={0}
               axisLine={{ stroke: colors.line }} tickLine={false}
               tick={{ fontSize: 11.5, fill: colors.ink }}
             />
@@ -92,7 +95,7 @@ export default function SectorSection({ filters }: { filters: Filters }) {
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </ChartBox>
     </Card>
   );
 }

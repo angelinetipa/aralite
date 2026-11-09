@@ -17,6 +17,9 @@
 // The title names the strand with the biggest gap. Strands under
 // MIN_LEARNERS are skipped for that headline, since a tiny strand can
 // look extreme on very few people.
+//
+// Size. The chart fills its grid cell. Its smallest height is 28px per
+// strand plus room for the legend and axis.
 
 import { useEffect, useState } from 'react';
 import {
@@ -27,7 +30,7 @@ import { getStrandByGender, type StrandGenderRow } from '../lib/queries';
 import { type Filters } from '../lib/filters';
 import { compact } from '../lib/format';
 import { colors } from '../constants/theme';
-import { Card, ErrorState } from './ui';
+import { Card, ChartBox, ErrorState } from './ui';
 
 const MIN_LEARNERS = 1000;
 
@@ -88,9 +91,9 @@ export default function StrandGenderSection({ filters }: { filters: Filters }) {
     <Card
       finding={finding}
       title={title}
-      subtitle="Share of boys and girls in each senior high strand. The number beside each strand is its total learners. This is enrollment, not choice, because availability shapes it too."
+      subtitle="Share of boys and girls per strand. The number beside each strand is its total learners. Enrollment, not choice."
     >
-      <div style={{ height: Math.max(300, rows.length * 42 + 70) }}>
+      <ChartBox min={rows.length * 28 + 64}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={rows} layout="vertical" barCategoryGap={8}
@@ -107,7 +110,7 @@ export default function StrandGenderSection({ filters }: { filters: Filters }) {
               }}
             />
             <YAxis
-              type="category" dataKey="label" width={120} interval={0}
+              type="category" dataKey="label" width={110} interval={0}
               axisLine={{ stroke: colors.line }} tickLine={false}
               tick={{ fontSize: 11.5, fill: colors.ink }}
             />
@@ -135,7 +138,7 @@ export default function StrandGenderSection({ filters }: { filters: Filters }) {
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </ChartBox>
     </Card>
   );
 }

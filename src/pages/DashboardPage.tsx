@@ -7,8 +7,7 @@
 //   evidence  two charts that support it, beside the finding
 //   so what   where to act first, one full width strip
 //   explore   one slim row with the filter and four numbers
-//   charts    the six background charts, always shown
-//   schools   the schools in the area, once a filter is set
+//   charts    the background charts, in three bento rows
 //   tools     ask the data yourself
 //   limits    what none of it can tell you
 //
@@ -16,11 +15,15 @@
 // when the filter moves. That keeps the top of the page stable. Only the
 // sections below the filter respond to it.
 //
-// The top uses the 12 column bento grid from index.css. Each block sits
+// Every row uses the 12 column bento grid from index.css. Each block sits
 // in a wrapper with a span class. The wrapper always renders, so the grid
-// keeps its shape while the data loads.
+// keeps its shape while the data loads. Blocks in one row stretch to the
+// same height.
 //
-// The chart rows still use the old two column layout. They move to the
+//   Row shapes   4 + 4 + 4, then 12, then 5 + 7, then 7 + 5,
+//                then 4 + 5 + 3, then 5 + 7
+//
+// The Ask and About blocks still use the old layout. They move to the
 // grid in the next step.
 
 import { useEffect, useState } from 'react';
@@ -81,22 +84,32 @@ export default function DashboardPage() {
         {/* ---- Explore your area (responds to the filter) --------------- */}
         <ExplorePanel filters={filters} onChange={setFilters} />
 
-        {/* ---- Background charts (old layout, moves in the next step) --- */}
-        <div className="aralite-grid2" style={{ marginBottom: 14 }}>
-          <div>
-            <StrandsSection filters={filters} />
-            <OfferingSection filters={filters} />
-            <StrandGenderSection filters={filters} />
-          </div>
-          <div>
-            <SectorSection filters={filters} />
+        {/* ---- Background charts ---------------------------------------- */}
+        <div className="aralite-bento">
+          <div className="bento-7 bento-fill">
             <DropoffSection filters={filters} />
+          </div>
+          <div className="bento-5 bento-fill">
             <RegionsSection filters={filters} onPick={(r) => setFilters({ region: r })} />
           </div>
-        </div>
 
-        {/* The schools in the area. Shows only once something is picked. */}
-        <SchoolPanel filters={filters} />
+          <div className="bento-4 bento-fill">
+            <StrandsSection filters={filters} />
+          </div>
+          <div className="bento-5 bento-fill">
+            <StrandGenderSection filters={filters} />
+          </div>
+          <div className="bento-3 bento-fill">
+            <SectorSection filters={filters} />
+          </div>
+
+          <div className="bento-5 bento-fill">
+            <OfferingSection filters={filters} />
+          </div>
+          <div className="bento-7 bento-fill">
+            <SchoolPanel filters={filters} />
+          </div>
+        </div>
 
         {/* ---- Tools ---------------------------------------------------- */}
         <AskSection />
