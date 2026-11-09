@@ -11,6 +11,9 @@
 //   red           the priority regions, calculated by priorityRegions()
 //   dark outline  the region picked in the filter
 //
+// Size. The chart fills the height of its grid cell. It never shrinks
+// below minHeight, which gives every region bar about 14px.
+//
 // The x-axis stays, starts at zero, and has a title, so the reader can
 // see what the numbers mean and how far they range. Gridlines are gone.
 // Sorting happens here and never in SQL. The sort must use the same
@@ -29,6 +32,10 @@ import { Card, ErrorState } from './ui';
 
 export type Metric = 'avgStrands' | 'pctLearnersOneStrand';
 
+// Pixels per region bar, plus room for the axis and the national label.
+const BAR_PX = 13;
+const CHROME_PX = 76;
+
 // Each metric keeps its own wording, axis step, and sort direction together.
 const SPEC = {
   avgStrands: {
@@ -37,7 +44,6 @@ const SPEC = {
     step: 1,
     axisTitle: 'Average strands per school (of 8)',
     tooltip: 'Average strands per school',
-    what: 'Average strands each school runs, by region.',
     sortAsc: true, // fewest first, worst at the top
   },
   pctLearnersOneStrand: {
@@ -46,7 +52,6 @@ const SPEC = {
     step: 10,
     axisTitle: '% of senior high learners',
     tooltip: 'Learners in one strand schools',
-    what: 'Share of senior high learners whose school runs only one strand.',
     sortAsc: false, // highest share first, worst at the top
   },
 };
@@ -93,77 +98,83 @@ export default function AvailabilitySection({
   const ticks = Array.from({ length: axisMax / spec.step + 1 }, (_, i) => i * spec.step);
 
   const title = metric === 'avgStrands'
-    ? `The average school runs ${nat.toFixed(1)} of 8 strands. In ${worst.region} it is ${worst.avgStrands.toFixed(1)}`
-    : `Learners in ${worst.region} are ${(worst[metric] / best[metric]).toFixed(0)}× more likely than in ${best.region} to attend a one strand school`;
+    ? 'Strands per school'
+    : 'Learners in one strand schools';
 
-  const subtitle = `${spec.what} Red marks the ${priority.length} regions to widen first.`;
+  const subtitle = metric === 'avgStrands'
+    ? `Average is ${nat.toFixed(1)} of 8. Lowest is ${worst.region} at ${worst.avgStrands.toFixed(1)}.`
+    : `${worst.region} is ${(worst[metric] / best[metric]).toFixed(0)}× ${best.region}.`;
 
   return (
-    <Card kicker="The evidence" title={title} subtitle={subtitle}>
-      <div style={{ height: data.length * 19 + 80 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={data}
-            layout="vertical"
-            barCategoryGap={4}
-            margin={{ top: 24, right: 38, bottom: 24, left: 0 }}
-          >
-            <XAxis
-              type="number"
-              domain={[0, axisMax]}
-              ticks={ticks}
-              tickFormatter={spec.tick}
-              tick={{ fontSize: 11.5, fill: colors.inkSoft }}
-              axisLine={{ stroke: colors.line }}
-              tickLine={{ stroke: colors.line }}
-              label={{
-                value: spec.axisTitle,
-                position: 'insideBottom', offset: -14,
-                style: { fontSize: 11.5, fill: colors.inkSoft },
-              }}
-            />
-            <YAxis
-              type="category" dataKey="region" width={86} interval={0}
-              axisLine={{ stroke: colors.line }} tickLine={false}
-              tick={{ fontSize: 11.5, fill: colors.ink }}
-            />
-            <Tooltip
-              cursor={{ fill: 'rgba(0,0,0,0.04)' }}
-              formatter={(v) => [spec.format(Number(v)), spec.tooltip]}
-            />
-            <ReferenceLine
-              x={nat}
-              stroke={colors.ink}
-              strokeDasharray="4 4"
-              strokeWidth={1.2}
-              ifOverflow="extendDomain"
-              label={{
-                value: `National ${spec.format(nat)}`,
-                position: 'top', offset: 8,
-                style: { fontSize: 11, fill: colors.ink, fontWeight: 700 },
-              }}
-            />
-            <Bar dataKey={metric} radius={[0, 4, 4, 0]}>
-              {data.map((r) => {
-                const picked = filters.region === r.region;
-                return (
-                  <Cell
-                    key={r.region}
-                    fill={priority.includes(r.region) ? colors.worse : colors.gray}
-                    stroke={picked ? colors.ink : undefined}
-                    strokeWidth={picked ? 2 : 0}
-                  />
-                );
-              })}
-              <LabelList
-                dataKey={metric}
-                position="right"
-                formatter={(v: unknown) => spec.format(Number(v))}
-                style={{ fontSize: 11.5, fill: colors.ink, fontWeight: 600 }}
+    <Card title={title} subtitle={subtitle}>
+      {/* The wrapper keeps a minimum height. The chart sits inside it
+          and stretches to whatever height the grid cell gives. */}
+      <div style={{ position: 'relative', height: '100%', minHeight: data.length * BAR_PX + CHROME_PX }}>
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={data}
+              layout="vertical"
+              barCategoryGap={3}
+              margin={{ top: 22, right: 38, bottom: 24, left: 0 }}
+            >
+              <XAxis
+                type="number"
+                domain={[0, axisMax]}
+                ticks={ticks}
+                tickFormatter={spec.tick}
+                tick={{ fontSize: 11.5, fill: colors.inkSoft }}
+                axisLine={{ stroke: colors.line }}
+                tickLine={{ stroke: colors.line }}
+                label={{
+                  value: spec.axisTitle,
+                  position: 'insideBottom', offset: -14,
+                  style: { fontSize: 11.5, fill: colors.inkSoft },
+                }}
               />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+              <YAxis
+                type="category" dataKey="region" width={86} interval={0}
+                axisLine={{ stroke: colors.line }} tickLine={false}
+                tick={{ fontSize: 11.5, fill: colors.ink }}
+              />
+              <Tooltip
+                cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+                formatter={(v) => [spec.format(Number(v)), spec.tooltip]}
+              />
+              <ReferenceLine
+                x={nat}
+                stroke={colors.ink}
+                strokeDasharray="4 4"
+                strokeWidth={1.2}
+                ifOverflow="extendDomain"
+                label={{
+                  value: `National ${spec.format(nat)}`,
+                  position: 'top', offset: 8,
+                  style: { fontSize: 11, fill: colors.ink, fontWeight: 700 },
+                }}
+              />
+              <Bar dataKey={metric} radius={[0, 4, 4, 0]}>
+                {data.map((r) => {
+                  const picked = filters.region === r.region;
+                  return (
+                    <Cell
+                      key={r.region}
+                      fill={priority.includes(r.region) ? colors.worse : colors.gray}
+                      stroke={picked ? colors.ink : undefined}
+                      strokeWidth={picked ? 2 : 0}
+                    />
+                  );
+                })}
+                <LabelList
+                  dataKey={metric}
+                  position="right"
+                  formatter={(v: unknown) => spec.format(Number(v))}
+                  style={{ fontSize: 11.5, fill: colors.ink, fontWeight: 600 }}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </Card>
   );
