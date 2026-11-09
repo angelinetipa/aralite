@@ -22,9 +22,8 @@ body {
   margin: 0;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   /* A soft blue tint at the top that fades into warm cream. The cream is
-     deep enough that white cards stand out from the page, which they did
-     not when the whole page was near white. The color stays in the page
-     frame. Chart colors keep their meaning and are not touched here. */
+     deep enough that white cards stand out from the page. The color stays
+     in the page frame. Chart colors keep their meaning. */
   background-color: #F3EFE4;
   background-image: linear-gradient(180deg, #DCE5F5 0px, #EBEEF4 420px, #F3EFE4 900px);
   background-repeat: no-repeat;
@@ -36,9 +35,133 @@ body {
   width: 100%;
 }
 
-/* The rest of the data. Two columns of charts, each column stacking its
-   own cards, so charts of different heights do not leave gaps. Below
-   980px the columns merge into one, left column first. */
+/* ------------------------------------------------------------------
+   Cards.
+   Every Card carries the aralite-card class. Outside the bento grid it
+   keeps a bottom margin so stacked cards stay apart. Inside the grid the
+   gap does that job, so the margin is removed.
+   ------------------------------------------------------------------ */
+.aralite-card {
+  margin-bottom: 14px;
+}
+
+/* ------------------------------------------------------------------
+   Bento grid.
+   One 12 column grid for the whole page. Place any block with a span
+   class. Blocks in the same row stretch to the same height, so widths
+   can differ while the edges still line up.
+
+   Common row shapes:
+     4 + 8      5 + 7      7 + 5      4 + 5 + 3      4 + 4 + 4
+
+   bento-tall lets one block run down two rows, for example the finding
+   beside two charts and a strip.
+   ------------------------------------------------------------------ */
+.aralite-bento {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+  margin-bottom: 12px;
+}
+
+.aralite-bento>* {
+  min-width: 0;
+}
+
+.aralite-bento .aralite-card {
+  margin-bottom: 0;
+}
+
+.bento-3 {
+  grid-column: span 3;
+}
+
+.bento-4 {
+  grid-column: span 4;
+}
+
+.bento-5 {
+  grid-column: span 5;
+}
+
+.bento-6 {
+  grid-column: span 6;
+}
+
+.bento-7 {
+  grid-column: span 7;
+}
+
+.bento-8 {
+  grid-column: span 8;
+}
+
+.bento-12 {
+  grid-column: span 12;
+}
+
+.bento-tall {
+  grid-row: span 2;
+}
+
+/* Wrapper for blocks that are not a Card, so they can still fill the
+   cell and match the height of their row neighbors. */
+.bento-fill {
+  display: flex;
+  flex-direction: column;
+}
+
+.bento-fill>* {
+  flex: 1;
+}
+
+/* Laptops and tablets. Two blocks per row. Blocks that need room stay
+   full width with bento-full-md. */
+@media (max-width: 1100px) {
+
+  .bento-3,
+  .bento-4,
+  .bento-5,
+  .bento-7,
+  .bento-8 {
+    grid-column: span 6;
+  }
+
+  .bento-full-md {
+    grid-column: span 12;
+  }
+
+  .bento-tall {
+    grid-row: auto;
+  }
+}
+
+/* Phones. Everything stacks in one column. */
+@media (max-width: 700px) {
+
+  .bento-3,
+  .bento-4,
+  .bento-5,
+  .bento-6,
+  .bento-7,
+  .bento-8,
+  .bento-12 {
+    grid-column: span 12;
+  }
+
+  .aralite-bento {
+    gap: 10px;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Old layout classes.
+   These stay until the page moves to the bento grid in the next steps.
+   Remove each one when nothing uses it.
+   ------------------------------------------------------------------ */
+
+/* The rest of the data. Two columns of charts. */
 .aralite-grid2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -53,9 +176,7 @@ body {
 }
 
 /* A tinted band behind the finding, the evidence and the priority
-   regions, so the three read as one block. The cards inside stay white.
-   The bottom padding is 0 because the last card already carries its own
-   bottom margin. */
+   regions. The cards inside stay white. */
 .aralite-band {
   background: linear-gradient(180deg, #E3EBFA 0%, #EDF2FB 100%);
   border: 1px solid #D0DCF2;
@@ -71,11 +192,7 @@ body {
   }
 }
 
-/* Top of the page. The finding sits on the left and the two evidence
-   charts sit beside it, so the argument fits on one screen. The story
-   wrapper always renders, which keeps the charts in their columns while
-   the data loads. Below 1100px the finding takes the full first row and
-   the charts share the second. Below 700px everything stacks. */
+/* Top of the page. Finding on the left, two evidence charts beside it. */
 .aralite-top {
   display: grid;
   grid-template-columns: minmax(220px, 0.62fr) 1fr 1fr;
@@ -115,10 +232,7 @@ body {
   gap: 8px;
 }
 
-/* Visual hierarchy: the story leads, context supports.
-   Charts below "The rest of the picture" describe the dataset rather
-   than argue the finding, so they sit back in muted colour. Hovering
-   the block restores full saturation. */
+/* Context charts sit back in muted color. Hover restores full color. */
 .aralite-context {
   filter: saturate(0.4);
   transition: filter 220ms ease;
@@ -129,7 +243,7 @@ body {
   filter: none;
 }
 
-/* Respect users who ask for less motion: no fade, just full colour. */
+/* Respect users who ask for less motion: no fade, just full color. */
 @media (prefers-reduced-motion: reduce) {
   .aralite-context {
     filter: none;
