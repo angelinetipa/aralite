@@ -2,6 +2,9 @@
 // Service layer. Every SQL query lives here and components never write
 // SQL. (UI -> section -> here -> DuckDB.) Every query takes the shared
 // Filters object, so location filtering works the same everywhere.
+//
+// SQL note. Always write AS before a column alias. DuckDB reads some
+// plain words, such as name, as keywords and a bare alias fails to parse.
 
 import { query } from './db';
 import { GRADE_ORDER } from '../constants/theme';
@@ -33,8 +36,8 @@ export type Headline = { total: number; schools: number };
 
 export async function getHeadline(f: Filters): Promise<Headline> {
   const [tot, sch] = await Promise.all([
-    query<{ v: bigint }>(`SELECT SUM(e.enrollment) v ${JOINED} ${where(f)}`),
-    query<{ v: bigint }>(`SELECT COUNT(*) v FROM schools s ${where(f)}`),
+    query<{ v: bigint }>(`SELECT SUM(e.enrollment) AS v ${JOINED} ${where(f)}`),
+    query<{ v: bigint }>(`SELECT COUNT(*) AS v FROM schools s ${where(f)}`),
   ]);
   return {
     total: Number(tot[0]?.v ?? 0),
@@ -47,7 +50,7 @@ export async function getHeadline(f: Filters): Promise<Headline> {
 export type GradeRow = { grade: string; total: number };
 export async function getByGrade(f: Filters): Promise<GradeRow[]> {
   const rows = await query<{ grade: string; total: bigint }>(`
-    SELECT e.grade, SUM(e.enrollment) total ${JOINED} ${where(f)} GROUP BY e.grade
+    SELECT e.grade, SUM(e.enrollment) AS total ${JOINED} ${where(f)} GROUP BY e.grade
   `);
   const out: GradeRow[] = [];
   for (const g of GRADE_ORDER) {
@@ -60,7 +63,7 @@ export async function getByGrade(f: Filters): Promise<GradeRow[]> {
 export type GenderRow = { grade: string; Male: number; Female: number };
 export async function getGenderByGrade(f: Filters): Promise<GenderRow[]> {
   const rows = await query<{ grade: string; gender: string; total: bigint }>(`
-    SELECT e.grade, e.gender, SUM(e.enrollment) total ${JOINED} ${where(f)}
+    SELECT e.grade, e.gender, SUM(e.enrollment) AS total ${JOINED} ${where(f)}
     GROUP BY e.grade, e.gender
   `);
   const out: GenderRow[] = [];
@@ -75,7 +78,7 @@ export async function getGenderByGrade(f: Filters): Promise<GenderRow[]> {
 export type StrandRow = { strand: string; total: number };
 export async function getByStrand(f: Filters): Promise<StrandRow[]> {
   const rows = await query<{ strand: string; total: bigint }>(`
-    SELECT e.strand, SUM(e.enrollment) total ${JOINED}
+    SELECT e.strand, SUM(e.enrollment) AS total ${JOINED}
     ${where(f, ["e.grade IN ('G11','G12')", 'e.strand IS NOT NULL'])}
     GROUP BY e.strand ORDER BY total DESC
   `);
@@ -88,7 +91,7 @@ export async function getByStrand(f: Filters): Promise<StrandRow[]> {
 export type SectorRow = { sector: string; total: number };
 export async function getBySector(f: Filters): Promise<SectorRow[]> {
   const rows = await query<{ Sector: string; total: bigint }>(`
-    SELECT s.Sector, SUM(e.enrollment) total ${JOINED} ${where(f)}
+    SELECT s.Sector, SUM(e.enrollment) AS total ${JOINED} ${where(f)}
     GROUP BY s.Sector ORDER BY total DESC
   `);
   return rows.map((r) => ({ sector: r.Sector, total: Number(r.total) }));
@@ -99,7 +102,7 @@ export async function getBySector(f: Filters): Promise<SectorRow[]> {
 export type RegionRow = { region: string; total: number };
 export async function getTopRegions(): Promise<RegionRow[]> {
   const rows = await query<{ Region: string; total: bigint }>(`
-    SELECT s.Region, SUM(e.enrollment) total ${JOINED}
+    SELECT s.Region, SUM(e.enrollment) AS total ${JOINED}
     GROUP BY s.Region ORDER BY total DESC
   `);
   return rows.map((r) => ({ region: r.Region, total: Number(r.total) }));
@@ -110,7 +113,7 @@ export async function getTopRegions(): Promise<RegionRow[]> {
 export async function getLevelOptions(level: Level, f: Filters): Promise<string[]> {
   const col = LEVEL_COLUMN[level];
   const rows = await query<{ v: string }>(`
-    SELECT DISTINCT "${col}" v FROM schools s ${where(f)} ORDER BY v LIMIT 2000
+    SELECT DISTINCT "${col}" AS v FROM schools s ${where(f)} ORDER BY v LIMIT 2000
   `);
   return rows.map((r) => r.v).filter(Boolean);
 }
@@ -143,19 +146,23 @@ export async function getSchools(
   const scope = where(f);
   const [rows, counted] = await Promise.all([
     query<{
-      id: number; name: string; region: string;
+      id: number; school_name: string; region: string;
       municipality: string; sector: string; total: number;
     }>(`
-      SELECT "BEIS School ID" id, "School Name" name, "Region" region,
-             "Municipality" municipality, "Sector" sector, "Total Enrollment" total
+      SELECT s."BEIS School ID" AS id,
+             s."School Name" AS school_name,
+             s."Region" AS region,
+             s."Municipality" AS municipality,
+             s."Sector" AS sector,
+             s."Total Enrollment" AS total
       FROM schools s ${scope}
-      ORDER BY "Total Enrollment" DESC LIMIT ${SCHOOLS_SHOWN}
+      ORDER BY s."Total Enrollment" DESC LIMIT ${SCHOOLS_SHOWN}
     `),
-    query<{ v: bigint }>(`SELECT COUNT(*) v FROM schools s ${scope}`),
+    query<{ v: bigint }>(`SELECT COUNT(*) AS v FROM schools s ${scope}`),
   ]);
   return {
     hits: rows.map((r) => ({
-      id: String(r.id), name: r.name, region: r.region,
+      id: String(r.id), name: r.school_name, region: r.region,
       municipality: r.municipality, sector: r.sector, total: Number(r.total),
     })),
     total: Number(counted[0]?.v ?? 0),
@@ -177,7 +184,7 @@ export async function getSchoolProfile(id: string): Promise<SchoolProfile> {
     FROM schools WHERE CAST("BEIS School ID" AS VARCHAR) = '${esc}' LIMIT 1
   `);
   const g = await query<{ grade: string; gender: string; total: bigint }>(`
-    SELECT e.grade, e.gender, SUM(e.enrollment) total FROM enrollment e
+    SELECT e.grade, e.gender, SUM(e.enrollment) AS total FROM enrollment e
     WHERE CAST(e."BEIS School ID" AS VARCHAR) = '${esc}' GROUP BY e.grade, e.gender
   `);
   const order = ['K', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'G8', 'G9', 'G10', 'G11', 'G12', 'Elem NG', 'JHS NG'];
@@ -196,7 +203,7 @@ export { resetToDefault } from './db';
 export type StrandGenderRow = { strand: string; Male: number; Female: number };
 export async function getStrandByGender(f: Filters): Promise<StrandGenderRow[]> {
   const rows = await query<{ strand: string; gender: string; total: bigint }>(`
-    SELECT e.strand, e.gender, SUM(e.enrollment) total ${JOINED}
+    SELECT e.strand, e.gender, SUM(e.enrollment) AS total ${JOINED}
     ${where(f, ["e.grade IN ('G11','G12')", 'e.strand IS NOT NULL'])}
     GROUP BY e.strand, e.gender
   `);
@@ -215,7 +222,7 @@ export async function getStrandByGender(f: Filters): Promise<StrandGenderRow[]> 
 export type OfferingRow = { offering: string; schools: number };
 export async function getByOffering(f: Filters): Promise<OfferingRow[]> {
   const rows = await query<{ coc: string; n: bigint }>(`
-    SELECT "Modified COC" coc, COUNT(*) n FROM schools s ${where(f)}
+    SELECT "Modified COC" AS coc, COUNT(*) AS n FROM schools s ${where(f)}
     GROUP BY "Modified COC" ORDER BY n DESC
   `);
   return rows.map((r) => ({ offering: r.coc, schools: Number(r.n) }));
