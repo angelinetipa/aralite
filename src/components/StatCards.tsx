@@ -17,8 +17,12 @@
 // With nothing picked, the area is the country, so a comparison would
 // compare it with itself. The small line then says what the number is.
 //
-// These are flat tiles on purpose. They sit inside the Explore panel,
-// and a shadowed card inside a card makes the panel look heavy.
+// Layout. Four tiles in one row when there is room, two by two when the
+// card is narrow. The grid fills the height it is given, so the tiles
+// match the height of the filter beside them.
+//
+// These are flat tiles on purpose. They sit inside a card, and a shadowed
+// card inside a card makes the row look heavy.
 
 import { useEffect, useState } from 'react';
 import { type Filters, scopeLabel } from '../lib/filters';
@@ -33,24 +37,27 @@ function StatCard({
   return (
     <div
       style={{
-        padding: '0.7rem 0.9rem',
+        padding: '0.6rem 0.7rem',
         textAlign: 'center',
         borderRadius: 14,
         background: '#F9F7F1',
         border: `1px solid ${colors.line}`,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
       }}
     >
-      <div style={{ fontSize: 12.5, color: colors.inkSoft, lineHeight: 1.35 }}>{label}</div>
+      <div style={{ fontSize: 12, color: colors.inkSoft, lineHeight: 1.35 }}>{label}</div>
       <div
         className="aralite-display"
         style={{
-          fontSize: 25, fontWeight: 800, color: tone ?? colors.ink,
-          marginTop: 6, whiteSpace: 'nowrap',
+          fontSize: 24, fontWeight: 800, color: tone ?? colors.ink,
+          marginTop: 4, whiteSpace: 'nowrap',
         }}
       >
         {value}
       </div>
-      <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 4 }}>{note}</div>
+      <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 3 }}>{note}</div>
     </div>
   );
 }
@@ -87,9 +94,10 @@ export default function StatCards({ filters }: { filters: Filters }) {
   return (
     <div
       style={{
+        height: '100%',
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-        gap: 10,
+        gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+        gap: 8,
       }}
     >
       <StatCard label="Total learners" value={h.total.toLocaleString()} note={learnersNote} />
@@ -105,7 +113,7 @@ export default function StatCards({ filters }: { filters: Filters }) {
         }
       />
       <StatCard
-        label="Senior high learners in one strand schools"
+        label="Learners in one strand schools"
         value={hasShs ? `${a!.scope.pctLearnersOneStrand.toFixed(1)}%` : '—'}
         tone={oneWorse ? colors.worse : undefined}
         note={

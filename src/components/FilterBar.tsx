@@ -7,8 +7,11 @@
 // row short and shows the reader which step comes next. One control
 // drives everything: the numbers, the charts and the school list.
 //
-// This bar has no box of its own. It sits inside the Explore panel, so
-// the filter, the numbers and the charts read as one tool.
+// This bar has no box of its own. It sits inside the Explore card, so
+// the filter and the numbers read as one tool.
+//
+// Dropdowns share the row width. They wrap onto a second line when the
+// card is narrow, and the card grows to fit.
 //
 // A school name/ID search used to sit in this bar. It was removed, not
 // repaired. It searched the raw name column and ranked by enrollment,
@@ -63,12 +66,12 @@ export default function FilterBar({
   const anyActive = LEVELS.some((l) => filters[l]);
 
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end' }}>
       {levels.map((lvl) => (
-        <div key={lvl} style={{ flex: '0 1 220px', minWidth: 150 }}>
+        <div key={lvl} style={{ flex: '1 1 140px', minWidth: 130 }}>
           <label
             htmlFor={`filter-${lvl}`}
-            style={{ fontSize: 12, color: colors.inkSoft, display: 'block', marginBottom: 4 }}
+            style={{ fontSize: 12, color: colors.inkSoft, display: 'block', marginBottom: 3 }}
           >
             {LABEL[lvl]}
           </label>
@@ -77,7 +80,7 @@ export default function FilterBar({
             value={filters[lvl] ?? ''}
             onChange={(e) => pick(lvl, e.target.value)}
             style={{
-              width: '100%', padding: '8px 10px', borderRadius: 10, fontSize: 14,
+              width: '100%', padding: '7px 10px', borderRadius: 10, fontSize: 14,
               border: '1px solid rgba(0,0,0,0.12)', background: '#fff',
             }}
           >
@@ -92,7 +95,7 @@ export default function FilterBar({
       {/* A hint only while nothing is chosen. After the first pick the
           next dropdown appears, which explains itself. */}
       {!anyActive && (
-        <span style={{ fontSize: 13, color: colors.inkSoft, paddingBottom: 9 }}>
+        <span style={{ fontSize: 13, color: colors.inkSoft, paddingBottom: 8 }}>
           Pick a region and more choices appear.
         </span>
       )}
@@ -101,7 +104,7 @@ export default function FilterBar({
         <button
           onClick={() => onChange({})}
           style={{
-            marginLeft: 'auto', padding: '9px 14px', borderRadius: 10, cursor: 'pointer',
+            marginLeft: 'auto', padding: '8px 14px', borderRadius: 10, cursor: 'pointer',
             fontSize: 13, border: 'none', background: colors.blue, color: '#fff',
             fontWeight: 600, whiteSpace: 'nowrap',
           }}
