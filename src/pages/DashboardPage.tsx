@@ -8,8 +8,7 @@
 //   so what   where to act first, one full width strip
 //   explore   one slim row with the filter and four numbers
 //   charts    the background charts, in three bento rows
-//   tools     ask the data yourself
-//   limits    what none of it can tell you
+//   bottom    about this data, and the ask box on a dark card
 //
 // Everything above "Explore your area" is national and never changes
 // when the filter moves. That keeps the top of the page stable. Only the
@@ -20,11 +19,11 @@
 // keeps its shape while the data loads. Blocks in one row stretch to the
 // same height.
 //
-//   Row shapes   4 + 4 + 4, then 12, then 5 + 7, then 7 + 5,
-//                then 4 + 5 + 3, then 5 + 7
+//   Row shapes   4 + 4 + 4, then 12, then 5 + 7 (explore), then 7 + 5,
+//                then 4 + 5 + 3, then 5 + 7, then 7 + 5
 //
-// The Ask and About blocks still use the old layout. They move to the
-// grid in the next step.
+// The two dark cards, the finding and the ask box, sit on a diagonal so
+// the weight of the page stays balanced.
 
 import { useEffect, useState } from 'react';
 import { getDB } from '../lib/db';
@@ -111,11 +110,15 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ---- Tools ---------------------------------------------------- */}
-        <AskSection />
-
-        {/* ---- Limits --------------------------------------------------- */}
-        <DataNote />
+        {/* ---- Limits and tools ----------------------------------------- */}
+        <div className="aralite-bento">
+          <div className="bento-7 bento-fill">
+            <DataNote />
+          </div>
+          <div className="bento-5 bento-fill">
+            <AskSection />
+          </div>
+        </div>
       </div>
 
       <p style={{ color: colors.inkSoft, fontSize: 12, textAlign: 'center', margin: '4px 0 12px' }}>

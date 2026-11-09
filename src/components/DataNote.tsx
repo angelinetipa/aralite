@@ -2,6 +2,9 @@
 // Provenance and limits, stated plainly in the product instead of buried
 // in a README. Saying what the data cannot answer is what stops someone
 // from drawing a conclusion it does not support.
+//
+// Layout. One compact card that fills its grid cell. The four facts sit
+// in a row. The limits flow into columns, so the list stays short.
 
 import { colors, clay } from '../constants/theme';
 
@@ -22,13 +25,24 @@ const LIMITS = [
 
 export default function DataNote() {
   return (
-    <div style={{ ...clay.card, padding: '1rem 1.2rem', margin: '16px 0 12px' }}>
-      <h3 style={{ fontSize: 17, fontWeight: 800, margin: '0 0 8px' }}>About this data</h3>
+    <div
+      className="aralite-card"
+      style={{
+        ...clay.card,
+        padding: '0.9rem 1.1rem',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <h2 style={{ fontSize: 17, fontWeight: 800, margin: '0 0 8px', color: colors.ink }}>
+        About this data
+      </h2>
 
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
           gap: 10,
           paddingBottom: 10,
           marginBottom: 10,
@@ -44,12 +58,12 @@ export default function DataNote() {
                 color: colors.inkSoft,
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
-                marginBottom: 4,
+                marginBottom: 3,
               }}
             >
               {f.label}
             </div>
-            <div style={{ fontSize: 14, fontWeight: 600 }}>{f.value}</div>
+            <div style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.35 }}>{f.value}</div>
           </div>
         ))}
       </div>
@@ -61,31 +75,34 @@ export default function DataNote() {
           color: colors.ink,
           textTransform: 'uppercase',
           letterSpacing: '0.05em',
-          marginBottom: 8,
+          marginBottom: 6,
         }}
       >
         What this data cannot tell you
       </div>
 
-      <ul style={{ margin: 0, paddingLeft: 18, color: colors.inkSoft }}>
+      {/* Columns of at least 240px, so the list reads in two columns on
+          wide cards and one on narrow ones. */}
+      <ul style={{ margin: 0, paddingLeft: 18, color: colors.inkSoft, columns: '240px', columnGap: 24 }}>
         {LIMITS.map((l) => (
-          <li key={l} style={{ fontSize: 13.5, lineHeight: 1.55, marginBottom: 3 }}>
+          <li key={l} style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 4, breakInside: 'avoid' }}>
             {l}
           </li>
         ))}
       </ul>
 
-      <p style={{ fontSize: 12.5, color: colors.inkSoft, margin: '8px 0 0', lineHeight: 1.55 }}>
-        <strong style={{ color: colors.ink }}>Nothing was deleted.</strong> The cleaning script only
-        repairs values and adds standardized copies beside them, so every original figure is still
-        there and any number here can be traced back to the source file.
-      </p>
-
-      <p style={{ fontSize: 12.5, color: colors.inkSoft, margin: '6px 0 0', lineHeight: 1.55 }}>
-        Cleaned with Python and pandas, stored as Parquet, queried with DuckDB-WASM. Aralite grew out
-        of a university course case study and is an independent project, not affiliated with the
-        Department of Education.
-      </p>
+      <div style={{ marginTop: 'auto', paddingTop: 8 }}>
+        <p style={{ fontSize: 12.5, color: colors.inkSoft, margin: 0, lineHeight: 1.55 }}>
+          <strong style={{ color: colors.ink }}>Nothing was deleted.</strong> The cleaning script only
+          repairs values and adds standardized copies beside them, so any number here can be traced
+          back to the source file.
+        </p>
+        <p style={{ fontSize: 12.5, color: colors.inkSoft, margin: '4px 0 0', lineHeight: 1.55 }}>
+          Cleaned with Python and pandas, stored as Parquet, queried with DuckDB-WASM. Aralite grew out
+          of a university course case study and is an independent project, not affiliated with the
+          Department of Education.
+        </p>
+      </div>
     </div>
   );
 }
