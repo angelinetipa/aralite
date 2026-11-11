@@ -1,15 +1,21 @@
 // src/pages/AdminPage.tsx
 // Data management (admin). Manage the WHOLE live dataset:
-//   - Replace: upload + clean a new file, then publish it live
+//   - Replace: upload and clean a new file, then publish it live
 //   - Remove:  clear the live dataset back to the default DepEd data
-// Both destructive actions ask for confirmation first. No login yet.
+// Removing asks for confirmation first. No login yet.
+//
+// Layout. Same bento grid as the dashboard.
+//   row one   status card (7 columns) and the remove action (5 columns)
+//   row two   upload card (5 columns) and the cleaning report (7 columns)
 
 import { useState } from 'react';
 import { resetToDefault } from '../lib/queries';
 import { getLiveDataset, setLiveDataset } from '../lib/liveDataset';
-import { colors, clay } from '../constants/theme';
+import { colors } from '../constants/theme';
 import NavHeader from '../components/NavHeader';
 import UploadSection from '../components/UploadSection';
+import Button from '../components/Button';
+import { Card } from '../components/ui';
 
 export default function AdminPage() {
   // Seed from the shared module so the status survives leaving this page
@@ -28,7 +34,7 @@ export default function AdminPage() {
       setLive(null);
       setConfirming(false);
     } catch (e) {
-      // Without this the button just looked dead when something failed.
+      console.error('resetToDefault failed', e);
       setError(e instanceof Error ? e.message : 'Could not restore the default dataset.');
     } finally {
       setRemoving(false);
@@ -44,99 +50,94 @@ export default function AdminPage() {
   const usingCustom = live !== null;
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '2rem 2rem', color: colors.ink }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '1rem 1.5rem', color: colors.ink }}>
       <NavHeader />
 
-      <div style={{ marginTop: '1.5rem' }}>
+      <div style={{ marginTop: '1rem' }}>
         <h2 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 4px' }}>Dataset Management</h2>
-        <p style={{ color: colors.inkSoft, fontSize: 14, margin: '0 0 20px' }}>
+        <p style={{ color: colors.inkSoft, fontSize: 14, margin: '0 0 14px' }}>
           Replace or remove the dataset shown on the public dashboard.
         </p>
 
-        {/* Current live source + status */}
-        <div style={{ ...clay.card, padding: '1.1rem 1.4rem', marginBottom: 20 }}>
-          <div style={{ fontSize: 13, color: colors.inkSoft }}>Currently live on dashboard</div>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            gap: 12, marginTop: 6, flexWrap: 'wrap',
-          }}>
-            <div>
-              <strong style={{ fontSize: 17 }}>
-                {live ?? 'Default DepEd dataset (SY 2023–2024)'}
-              </strong>
-              <span style={{
-                marginLeft: 10, fontSize: 12, fontWeight: 700, padding: '2px 8px',
-                borderRadius: 20, color: usingCustom ? colors.red : colors.blue,
-                background: usingCustom ? '#FBE6E9' : '#EAF0FB',
-              }}>
-                {usingCustom ? 'CUSTOM' : 'DEFAULT'}
-              </span>
-            </div>
-
-            {/* Remove is only meaningful when custom data is live */}
-            {usingCustom && !confirming && (
-              <button
-                onClick={() => setConfirming(true)}
-                style={{
-                  padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 13,
-                  border: `1px solid ${colors.red}`, background: '#fff',
-                  color: colors.red, fontWeight: 600,
-                }}
-              >
-                Remove live dataset
-              </button>
-            )}
+        {/* Row one. Status and the remove action. */}
+        <div className="aralite-bento">
+          <div className="bento-7 bento-fill">
+            <Card eyebrow="Status" title="Currently live on dashboard">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <strong style={{ fontSize: 17 }}>
+                  {live ?? 'Default DepEd dataset (SY 2023–2024)'}
+                </strong>
+                <span
+                  style={{
+                    fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+                    color: usingCustom ? colors.red : colors.blue,
+                    background: usingCustom ? '#FBE6E9' : '#EAF0FB',
+                  }}
+                >
+                  {usingCustom ? 'CUSTOM' : 'DEFAULT'}
+                </span>
+              </div>
+              <p style={{ fontSize: 13, color: colors.inkSoft, margin: '10px 0 0', lineHeight: 1.6 }}>
+                {usingCustom
+                  ? 'This dataset lives in your browser\u2019s memory only. Refreshing the page returns the dashboard to the default DepEd data.'
+                  : 'The dashboard shows the DepEd data that ships with the app.'}
+              </p>
+            </Card>
           </div>
 
-          {usingCustom && (
-            <p style={{ fontSize: 12.5, color: colors.inkSoft, margin: '10px 0 0', lineHeight: 1.6 }}>
-              This dataset lives in your browser's memory only. Refreshing the page returns the
-              dashboard to the default DepEd data.
-            </p>
-          )}
+          <div className="bento-5 bento-fill">
+            <Card
+              eyebrow="Action"
+              title="Remove live dataset"
+              subtitle="Go back to the default DepEd data."
+            >
+              {!confirming && (
+                <Button
+                  variant="outlineDanger"
+                  disabled={!usingCustom}
+                  onClick={() => setConfirming(true)}
+                >
+                  Remove live dataset
+                </Button>
+              )}
+
+              {!usingCustom && !confirming && (
+                <p style={{ fontSize: 13, color: colors.inkSoft, margin: '10px 0 0' }}>
+                  Nothing to remove. The default data is live.
+                </p>
+              )}
+
+              {confirming && (
+                <div
+                  style={{
+                    padding: '10px 12px', borderRadius: 10,
+                    background: '#FBE6E9', border: `1px solid ${colors.red}`,
+                  }}
+                >
+                  <p style={{ margin: '0 0 10px', fontSize: 14, color: colors.ink }}>
+                    Remove the custom dataset and restore the default DepEd data?
+                    The dashboard switches back right away.
+                  </p>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <Button variant="danger" disabled={removing} onClick={removeLive}>
+                      {removing ? 'Removing…' : 'Yes, remove it'}
+                    </Button>
+                    <Button variant="outline" onClick={() => setConfirming(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {error && (
+                <p style={{ margin: '10px 0 0', fontSize: 13, color: colors.red }}>{error}</p>
+              )}
+            </Card>
+          </div>
         </div>
 
-        {/* Confirm step so removal never happens by accident */}
-        {confirming && (
-          <div style={{
-            marginBottom: 20, padding: '12px 14px', borderRadius: 10,
-            background: '#FBE6E9', border: `1px solid ${colors.red}`,
-          }}>
-            <p style={{ margin: '0 0 10px', fontSize: 14, color: colors.ink }}>
-              Remove the custom dataset and restore the default DepEd data?
-              The dashboard will switch back immediately.
-            </p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={removeLive}
-                disabled={removing}
-                style={{
-                  padding: '8px 16px', borderRadius: 10, fontSize: 13,
-                  cursor: removing ? 'default' : 'pointer',
-                  border: 'none', background: removing ? colors.blueSoft : colors.red,
-                  color: '#fff', fontWeight: 600,
-                }}
-              >
-                {removing ? 'Removing…' : 'Yes, remove it'}
-              </button>
-              <button
-                onClick={() => setConfirming(false)}
-                style={{
-                  padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 13,
-                  border: '1px solid rgba(0,0,0,0.15)', background: '#fff',
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-            {error && (
-              <p style={{ margin: '10px 0 0', fontSize: 13, color: colors.red }}>{error}</p>
-            )}
-          </div>
-        )}
-
-        {/* Replace: upload -> clean -> publish */}
-        <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 8px' }}>
+        {/* Row two. Upload, clean and publish. */}
+        <h3 style={{ fontSize: 16, fontWeight: 700, margin: '4px 0 8px' }}>
           {usingCustom ? 'Replace live dataset' : 'Publish a dataset'}
         </h3>
         <UploadSection

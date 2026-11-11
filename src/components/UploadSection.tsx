@@ -3,13 +3,18 @@
 // in src/lib/cleaning.ts), see a report, download the clean copy, and
 // when it is DepEd format, load it straight into the dashboard.
 // Nothing leaves the user's computer. There is no server.
+//
+// Layout. One bento row. The upload card sits on the left (5 columns)
+// and the cleaning report sits on the right (7 columns) as a set of
+// tiles. The report stays visible after the file is published.
 
 import { useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { cleanTable, looksLikeDepEd, toCSV, type CleanReport } from '../lib/cleaning';
 import { loadUploadedData } from '../lib/db';
-import { colors, clay } from '../constants/theme';
+import { colors } from '../constants/theme';
 import { Card } from './ui';
+import Button from './Button';
 
 // Some files (like the DepEd export) have title rows before the real
 // header. This finds the row with real column names, the browser version
@@ -23,19 +28,57 @@ function findHeaderRow(sheet: XLSX.WorkSheet): number {
   return 0;
 }
 
+type DoneState = {
+  step: 'done';
+  name: string;
+  report: CleanReport;
+  csv: string;
+  isDepEd: boolean;
+  enrollmentCols: string[];
+};
+
 type State =
   | { step: 'idle' }
   | { step: 'working' }
   | { step: 'error'; message: string }
-  | {
-    step: 'done';
-    name: string;
-    report: CleanReport;
-    csv: string;
-    isDepEd: boolean;
-    enrollmentCols: string[];
-  }
-  | { step: 'loaded'; name: string };
+  | DoneState
+  | { step: 'loaded'; name: string; report: CleanReport };
+
+// One tile per repair count. Same look as the stat tiles on the dashboard.
+function ReportTile({ label, value, note }: { label: string; value: string; note: string }) {
+  return (
+    <div
+      style={{
+        padding: '0.5rem 0.6rem',
+        textAlign: 'center',
+        borderRadius: 14,
+        background: '#F9F7F1',
+        border: `1px solid ${colors.line}`,
+      }}
+    >
+      <div style={{ fontSize: 12, color: colors.inkSoft, lineHeight: 1.35 }}>{label}</div>
+      <div
+        className="aralite-display"
+        style={{ fontSize: 22, fontWeight: 800, color: colors.ink, marginTop: 3 }}
+      >
+        {value}
+      </div>
+      <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 2 }}>{note}</div>
+    </div>
+  );
+}
+
+function reportTiles(r: CleanReport) {
+  return [
+    { label: 'Rows kept', value: r.rows.toLocaleString(), note: 'none deleted' },
+    { label: 'Columns', value: String(r.cols), note: 'in the cleaned file' },
+    { label: 'Encoding repairs', value: String(r.mojibakeFixed), note: 'broken letters fixed' },
+    { label: 'Junk stripped', value: String(r.junkStripped), note: 'leading symbols removed' },
+    { label: 'Whitespace fixes', value: String(r.whitespaceFixed), note: 'extra spaces removed' },
+    { label: 'Invalid values', value: String(r.invalidLabeled), note: 'labeled Not Provided' },
+    { label: 'School names', value: String(r.namesStandardized), note: 'standardized in a new column' },
+  ];
+}
 
 export default function UploadSection({
   onDataLoaded,
@@ -78,18 +121,20 @@ export default function UploadSection({
         isDepEd: looksLikeDepEd(cleaned),
         enrollmentCols,
       });
-    } catch {
+    } catch (e) {
+      console.error('Reading the uploaded file failed', e);
       setState({ step: 'error', message: 'Could not read that file. Use .csv or .xlsx.' });
     }
   }
 
-  async function loadIntoDashboard(csv: string, cols: string[], name: string) {
+  async function loadIntoDashboard(done: DoneState) {
     setLoading(true);
     try {
-      await loadUploadedData(csv, cols);
-      onDataLoaded(name);
-      setState({ step: 'loaded', name });
-    } catch {
+      await loadUploadedData(done.csv, done.enrollmentCols);
+      onDataLoaded(done.name);
+      setState({ step: 'loaded', name: done.name, report: done.report });
+    } catch (e) {
+      console.error('loadUploadedData failed', e);
       setState({ step: 'error', message: 'Could not load this file into the dashboard.' });
     } finally {
       setLoading(false);
@@ -105,128 +150,111 @@ export default function UploadSection({
     URL.revokeObjectURL(a.href);
   }
 
+  const report = state.step === 'done' || state.step === 'loaded' ? state.report : null;
+  const fileName = state.step === 'done' || state.step === 'loaded' ? state.name : '';
+
   return (
-    <Card
-      title="Clean your own dataset"
-      subtitle="Upload a CSV or Excel file. It is cleaned right in your browser and never leaves your computer."
-    >
-      <input
-        ref={inputRef}
-        type="file"
-        accept=".csv,.xlsx,.xls"
-        style={{ display: 'none' }}
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) handleFile(f);
-          e.target.value = '';
-        }}
-      />
-
-      {state.step === 'idle' && (
-        <button
-          onClick={() => inputRef.current?.click()}
-          style={{
-            ...clay.card, padding: '12px 20px', cursor: 'pointer',
-            fontSize: 15, fontWeight: 600, color: colors.blue, border: 'none',
-          }}
+    <div className="aralite-bento">
+      {/* Left. Upload, clean and publish. */}
+      <div className="bento-5 bento-fill">
+        <Card
+          title="Clean your own dataset"
+          subtitle="Upload a CSV or Excel file. It is cleaned right in your browser and never leaves your computer."
         >
-          Choose file (.csv / .xlsx)
-        </button>
-      )}
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".csv,.xlsx,.xls"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleFile(f);
+              e.target.value = '';
+            }}
+          />
 
-      {state.step === 'working' && <p style={{ color: colors.inkSoft }}>Cleaning…</p>}
-
-      {state.step === 'error' && (
-        <div>
-          <p style={{ color: colors.red }}>{state.message}</p>
-          <button onClick={() => setState({ step: 'idle' })} style={{ cursor: 'pointer' }}>
-            Try again
-          </button>
-        </div>
-      )}
-
-      {state.step === 'loaded' && (
-        <div>
-          <p style={{ color: colors.blue, fontWeight: 600 }}>
-            ✓ Dashboard now showing: {state.name}
-          </p>
-          <button
-            onClick={() => setState({ step: 'idle' })}
-            style={{ cursor: 'pointer', padding: '8px 14px', borderRadius: 10 }}
-          >
-            Upload another
-          </button>
-        </div>
-      )}
-
-      {state.step === 'done' && (
-        <div>
-          <table style={{ fontSize: 14, borderCollapse: 'collapse' }}>
-            <tbody>
-              {[
-                ['File', state.name],
-                ['Rows kept', state.report.rows.toLocaleString() + ' (none deleted)'],
-                ['Columns', String(state.report.cols)],
-                ['Encoding repairs (Ã‘ → Ñ)', String(state.report.mojibakeFixed)],
-                ['Leading junk stripped', String(state.report.junkStripped)],
-                ['Whitespace fixes', String(state.report.whitespaceFixed)],
-                ['Invalid values labeled', String(state.report.invalidLabeled)],
-                ['School names standardized', String(state.report.namesStandardized)],
-              ].map(([k, v]) => (
-                <tr key={k}>
-                  <td style={{ padding: '4px 16px 4px 0', color: colors.inkSoft }}>{k}</td>
-                  <td style={{ padding: '4px 0', fontWeight: 600 }}>{v}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {!state.isDepEd && (
-            <p style={{ fontSize: 13, color: colors.red, marginTop: 12 }}>
-              ⚠ This file doesn't match the DepEd enrollment format, so it can't
-              feed the dashboard charts. You can still download the cleaned copy.
-            </p>
+          {state.step === 'idle' && (
+            <Button onClick={() => inputRef.current?.click()}>Choose file (.csv or .xlsx)</Button>
           )}
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
-            <button
-              onClick={() => download(state.csv, state.name)}
+          {state.step === 'working' && <p style={{ color: colors.inkSoft, margin: 0 }}>Cleaning…</p>}
+
+          {state.step === 'error' && (
+            <div>
+              <p style={{ color: colors.red, margin: '0 0 10px' }}>{state.message}</p>
+              <Button variant="outline" onClick={() => setState({ step: 'idle' })}>Try again</Button>
+            </div>
+          )}
+
+          {state.step === 'loaded' && (
+            <div>
+              <p style={{ color: colors.blue, fontWeight: 600, margin: '0 0 10px' }}>
+                ✓ Dashboard now showing {state.name}
+              </p>
+              <Button variant="outline" onClick={() => setState({ step: 'idle' })}>
+                Upload another
+              </Button>
+            </div>
+          )}
+
+          {state.step === 'done' && (
+            <div>
+              <p style={{ fontSize: 14, margin: '0 0 10px', color: colors.ink }}>
+                <strong>{state.name}</strong> is cleaned. The report is on the right.
+              </p>
+
+              {!state.isDepEd && (
+                <p style={{ fontSize: 13, color: colors.red, margin: '0 0 12px' }}>
+                  ⚠ This file doesn&rsquo;t match the DepEd enrollment format, so it can&rsquo;t
+                  feed the dashboard charts. You can still download the cleaned copy.
+                </p>
+              )}
+
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {state.isDepEd && (
+                  <Button disabled={loading} onClick={() => loadIntoDashboard(state)}>
+                    {loading ? 'Loading…' : liveLabel}
+                  </Button>
+                )}
+                <Button variant="outline" onClick={() => download(state.csv, state.name)}>
+                  Download cleaned CSV
+                </Button>
+                <Button variant="outline" onClick={() => setState({ step: 'idle' })}>
+                  Clean another file
+                </Button>
+              </div>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* Right. What the cleaning changed. */}
+      <div className="bento-7 bento-fill">
+        <Card
+          title="Cleaning report"
+          subtitle={report ? fileName : 'Choose a file to see what was repaired.'}
+        >
+          {report ? (
+            <div
               style={{
-                padding: '10px 18px', borderRadius: 12, cursor: 'pointer', border: 'none',
-                background: colors.blue, color: '#fff', fontSize: 14, fontWeight: 600,
-                boxShadow: '0 6px 14px rgba(0,56,168,0.35)',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                gap: 8,
+                alignContent: 'start',
               }}
             >
-              Download cleaned CSV
-            </button>
-
-            {state.isDepEd && (
-              <button
-                disabled={loading}
-                onClick={() => loadIntoDashboard(state.csv, state.enrollmentCols, state.name)}
-                style={{
-                  padding: '10px 18px', borderRadius: 12, cursor: 'pointer', border: 'none',
-                  background: loading ? colors.blueSoft : colors.red, color: '#fff',
-                  fontSize: 14, fontWeight: 600,
-                  boxShadow: '0 6px 14px rgba(206,17,38,0.3)',
-                }}
-              >
-                {loading ? 'Loading…' : liveLabel}
-              </button>
-            )}
-
-            <button
-              onClick={() => setState({ step: 'idle' })}
-              style={{
-                padding: '10px 18px', borderRadius: 12, cursor: 'pointer',
-                border: '1px solid rgba(0,0,0,0.1)', background: colors.surface, fontSize: 14,
-              }}
-            >
-              Clean another file
-            </button>
-          </div>
-        </div>
-      )}
-    </Card>
+              {reportTiles(report).map((t) => (
+                <ReportTile key={t.label} label={t.label} value={t.value} note={t.note} />
+              ))}
+            </div>
+          ) : (
+            <p style={{ color: colors.inkSoft, fontSize: 14, margin: 0, lineHeight: 1.6 }}>
+              The cleaning only repairs values. It never deletes a row or a column, and
+              the report shows the counts so you can check.
+            </p>
+          )}
+        </Card>
+      </div>
+    </div>
   );
 }
