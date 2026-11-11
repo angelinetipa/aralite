@@ -1,6 +1,8 @@
 // src/components/SchoolPanel.tsx
 // Lists the schools inside the area picked in the filter bar.
 // The panel has four states: loading, error, empty and ready.
+// With no filter picked it shows a short hint, so its grid slot is
+// never empty and the card beside it keeps its normal height.
 // A request that finishes after the filter has changed is ignored.
 
 import { useEffect, useState } from 'react';
@@ -13,6 +15,10 @@ import { colors, clay } from '../constants/theme';
 import { Card } from './ui';
 
 type Status = 'idle' | 'loading' | 'error' | 'ready';
+
+// The list scrolls inside this height. A fixed cap keeps the row short,
+// so the card beside it does not stretch to match a long list.
+const LIST_MAX_HEIGHT = 300;
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
@@ -60,8 +66,30 @@ export default function SchoolPanel({ filters }: { filters: Filters }) {
     return () => { current = false; };
   }, [filters]);
 
-  // Nothing is picked yet, so the panel stays out of the way.
-  if (status === 'idle') return null;
+  const message = (text: string, color: string = colors.inkSoft) => (
+    <p style={{ color, fontSize: 14, textAlign: 'center', padding: '24px 0', margin: 0 }}>
+      {text}
+    </p>
+  );
+
+  // Nothing is picked yet. Show a hint in the same slot.
+  if (status === 'idle') {
+    return (
+      <Card
+        title="Schools in your area"
+        subtitle="The largest schools appear here once you pick a place."
+      >
+        <div
+          style={{
+            height: '100%', display: 'flex', alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {message('Pick a region to see its schools')}
+        </div>
+      </Card>
+    );
+  }
 
   const scope = scopeLabel(filters);
   const capped = total > SCHOOLS_SHOWN;
@@ -84,12 +112,6 @@ export default function SchoolPanel({ filters }: { filters: Filters }) {
       .catch((e) => console.error('getSchoolProfile failed for', id, e));
   }
 
-  const message = (text: string, color: string = colors.inkSoft) => (
-    <p style={{ color, fontSize: 14, textAlign: 'center', padding: '24px 0', margin: 0 }}>
-      {text}
-    </p>
-  );
-
   return (
     <Card title={title} subtitle={subtitle}>
       {status === 'loading' && message('Loading schools…')}
@@ -98,7 +120,12 @@ export default function SchoolPanel({ filters }: { filters: Filters }) {
       {status === 'ready' && hits.length === 0 && message('No schools found in this area.')}
 
       {status === 'ready' && hits.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 420, overflowY: 'auto' }}>
+        <div
+          style={{
+            display: 'flex', flexDirection: 'column', gap: 8,
+            maxHeight: LIST_MAX_HEIGHT, overflowY: 'auto',
+          }}
+        >
           {hits.map((h) => (
             <button
               key={h.id}
