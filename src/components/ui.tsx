@@ -10,7 +10,8 @@
 // A card can have an eyebrow, a small gray label above the title. It has
 // no border and no color, so it never looks like part of the argument.
 // A card can carry a finding, one or two sentences worked out from the
-// data. It sits in a soft neutral box between the subtitle and the chart.
+// data. It shows as an info button at the right end of the title row and
+// opens a short note. This keeps the card short.
 //
 // dark switches the card to the navy look. Use it for at most two cards
 // on a page, placed on a diagonal, so the weight stays balanced.
@@ -20,6 +21,7 @@
 
 import type { CSSProperties, ReactNode } from 'react';
 import { colors, clay } from '../constants/theme';
+import InfoTip from './InfoTip';
 
 // Navy used by dark cards. Matches the end of the hero banner gradient.
 const DARK_BG = '#0B2A6F';
@@ -73,24 +75,18 @@ export function Card({ title, subtitle, kicker, eyebrow, finding, dark = false, 
           {eyebrow}
         </div>
       )}
-      <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: ink }}>{title}</h2>
+
+      {/* Title row. The info button sits at the right end. */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: ink }}>{title}</h2>
+        {finding && <InfoTip dark={dark}>{finding}</InfoTip>}
+      </div>
+
       {subtitle && (
         <p style={{ color: soft, fontSize: 14, margin: '3px 0 0' }}>{subtitle}</p>
       )}
-      {finding && (
-        <div
-          style={{
-            marginTop: 8, padding: '7px 10px', borderRadius: 10,
-            background: dark ? 'rgba(255,255,255,0.10)' : '#F4F1E9',
-            fontSize: 13, lineHeight: 1.5, color: ink,
-          }}
-        >
-          <strong>Key finding </strong>
-          {finding}
-        </div>
-      )}
       {/* flex 1 lets the body take the leftover height of the cell. */}
-      <div style={{ marginTop: 10, flex: 1, minHeight: 0 }}>{children}</div>
+      <div style={{ marginTop: 8, flex: 1, minHeight: 0 }}>{children}</div>
     </div>
   );
 }
