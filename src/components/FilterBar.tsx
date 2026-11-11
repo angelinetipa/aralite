@@ -3,21 +3,21 @@
 //
 // Five cascading location dropdowns, shown one at a time. Only Region is
 // visible at first. Choosing a region reveals Province, choosing a
-// province reveals Division, and so on down to Barangay. This keeps the
-// row short and shows the reader which step comes next. One control
+// province reveals Division, and so on down to Barangay. One control
 // drives everything: the numbers, the charts and the school list.
+//
+// Layout. Two columns, so the bar is never taller than three rows:
+//   Region        Province
+//   Division      Municipality
+//   Barangay
+// The Clear all button lives in the Explore panel heading, not here.
 //
 // This bar has no box of its own. It sits inside the Explore card, so
 // the filter and the numbers read as one tool.
 //
-// Dropdowns share the row width. They wrap onto a second line when the
-// card is narrow, and the card grows to fit.
-//
-// A school name/ID search used to sit in this bar. It was removed, not
-// repaired. It searched the raw name column and ranked by enrollment,
-// so it hid schools that were in the data and taught the reader they
-// were not there. See the note in queries.ts. Narrowing to a barangay
-// is slower and honest. The search box was fast and wrong.
+// A school name or ID search was removed on purpose. It searched the raw
+// name column and ranked by enrollment, so it hid schools that were in
+// the data. See the note in queries.ts.
 //
 // Picking a level clears every narrower level under it.
 
@@ -51,7 +51,7 @@ export default function FilterBar({
     visibleLevels(filters).forEach((lvl) => {
       getLevelOptions(lvl, filters)
         .then((opts) => setOptions((o) => ({ ...o, [lvl]: opts })))
-        .catch(() => { });
+        .catch((e) => console.error('getLevelOptions failed for', lvl, e));
     });
   }, [filters]);
 
@@ -66,9 +66,16 @@ export default function FilterBar({
   const anyActive = LEVELS.some((l) => filters[l]);
 
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end' }}>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+        gap: '8px 10px',
+        alignItems: 'end',
+      }}
+    >
       {levels.map((lvl) => (
-        <div key={lvl} style={{ flex: '1 1 140px', minWidth: 130 }}>
+        <div key={lvl} style={{ minWidth: 0 }}>
           <label
             htmlFor={`filter-${lvl}`}
             style={{ fontSize: 12, color: colors.inkSoft, display: 'block', marginBottom: 3 }}
@@ -98,19 +105,6 @@ export default function FilterBar({
         <span style={{ fontSize: 13, color: colors.inkSoft, paddingBottom: 8 }}>
           Pick a region and more choices appear.
         </span>
-      )}
-
-      {anyActive && (
-        <button
-          onClick={() => onChange({})}
-          style={{
-            marginLeft: 'auto', padding: '8px 14px', borderRadius: 10, cursor: 'pointer',
-            fontSize: 13, border: 'none', background: colors.blue, color: '#fff',
-            fontWeight: 600, whiteSpace: 'nowrap',
-          }}
-        >
-          Clear all
-        </button>
       )}
     </div>
   );

@@ -18,8 +18,9 @@
 // compare it with itself. The small line then says what the number is.
 //
 // Layout. Four tiles in one row when there is room, two by two when the
-// card is narrow. The grid fills the height it is given, so the tiles
-// match the height of the filter beside them.
+// card is narrow. The tiles keep their natural height and sit in the
+// middle of the space they are given, so a tall filter beside them does
+// not stretch them.
 //
 // These are flat tiles on purpose. They sit inside a card, and a shadowed
 // card inside a card makes the row look heavy.
@@ -37,7 +38,7 @@ function StatCard({
   return (
     <div
       style={{
-        padding: '0.6rem 0.7rem',
+        padding: '0.5rem 0.6rem',
         textAlign: 'center',
         borderRadius: 14,
         background: '#F9F7F1',
@@ -51,13 +52,13 @@ function StatCard({
       <div
         className="aralite-display"
         style={{
-          fontSize: 24, fontWeight: 800, color: tone ?? colors.ink,
-          marginTop: 4, whiteSpace: 'nowrap',
+          fontSize: 22, fontWeight: 800, color: tone ?? colors.ink,
+          marginTop: 3, whiteSpace: 'nowrap',
         }}
       >
         {value}
       </div>
-      <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 3 }}>{note}</div>
+      <div style={{ fontSize: 11.5, color: colors.inkSoft, marginTop: 2 }}>{note}</div>
     </div>
   );
 }
@@ -97,6 +98,8 @@ export default function StatCards({ filters }: { filters: Filters }) {
         height: '100%',
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+        // center keeps each tile at its natural height.
+        alignContent: 'center',
         gap: 8,
       }}
     >
