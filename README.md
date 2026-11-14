@@ -1,10 +1,10 @@
 # Aralite 📊
 
-**In-browser SQL analytics for Philippine school enrollment. No server, no database bill.**
+**In browser SQL analytics for Philippine school enrollment. No server, no database bill.**
 
 Aralite turns the Department of Education's raw enrollment file (60,167 schools, 27M learners) into a clean, filterable dashboard. It runs a real SQL database *inside the browser*, so anyone can explore the data. You can drill from region down to a single barangay, or ask questions in plain English.
 
-It also makes one argument, and the page is arranged to support it:
+It also makes one argument, and the page is arranged to support it.
 
 > **The average senior high school runs 2.52 of the 8 tracks and strands on offer.** A learner in BARMM is roughly **6× more likely** than one in Region IV-A to attend a school running only one, so senior high enrollment reflects what schools offer as much as what learners want.
 
@@ -12,7 +12,7 @@ The full working is in [`analysis/strand-availability/`](analysis/strand-availab
 
 [![CI](https://github.com/angelinetipa/aralite/actions/workflows/ci.yml/badge.svg)](https://github.com/angelinetipa/aralite/actions/workflows/ci.yml)
 
-**Live:** [aralite.vercel.app](https://aralite.vercel.app)
+**Live site.** [aralite.vercel.app](https://aralite.vercel.app)
 
 ![Aralite dashboard](docs/screenshot.jpeg)
 
@@ -22,27 +22,31 @@ This started as a university case study in a Big Data course. The scenario was t
 
 I rebuilt it from scratch afterwards as an independent project, because the class version ran on a laptop and I wanted to learn what it takes to ship something a stranger can open.
 
-If you want to know how any piece works, [`docs/LEARNING.md`](docs/LEARNING.md) explains every tool and decision in plain language.
+If you want to know how any piece works, [`docs/LEARNING.md`](docs/LEARNING.md) explains every tool and decision in plain language. [`docs/WALKTHROUGH.md`](docs/WALKTHROUGH.md) explains every file and the questions an interviewer may ask.
 
 ## How to try it
 
 Open the [live link](https://aralite.vercel.app). No login, no setup. The cleaned data ships with the app.
 
-The top of the page is the same for everyone. It shows the finding, the two charts behind it, and the regions to act on first. Scroll to **Explore your area**, pick a region, and the stat cards compare it with the country. Narrow to a province or a barangay to see the schools in it. Then scroll to **Ask the data** and type a question in plain English. That one needs your own Groq or Gemini key, and the generated SQL is shown before it runs.
+The top of the page is the same for everyone. It shows the finding, the two charts behind it, and the regions to act on first. Scroll to **Explore your area** and pick a region. The stat cards compare it with the country, and the charts below respond. Narrow to a province or a barangay to fill the school list. Click the small **i** button on a chart card to read its key finding. Then scroll to **Ask the data** and type a question in plain English. That one needs your own Groq or Gemini key, and the generated SQL is shown before it runs.
 
-The dashboard takes a moment on first load while the SQL engine boots in your browser. The intro panel renders first on purpose, so there is something to read while it starts.
+The dashboard takes a moment on first load while the SQL engine boots in your browser. The banner renders first on purpose, so there is something to read while it starts.
+
+To try your own file, open the **Admin** page from the top right.
 
 ## Features
 
-- **The finding first.** The page opens with the claim in one sentence and its caveat attached. This part is always national, so nothing at the top moves when you filter.
+- **The finding first.** The page opens with the claim in one sentence and its caveat attached, on a dark card. This part is always national, so nothing at the top moves when you filter.
 - **Evidence, side by side.** Two charts support the finding directly. One shows strands per school and the other shows the share of learners with no alternative. Every bar is gray except the priority regions, which are red.
 - **A recommendation with a rule.** The four regions to widen first are calculated from the same data as the charts, not typed in. The panel also says what the data cannot decide.
-- **Explore your area.** Five cascading filters (Region, Province, Division, Municipality, Barangay) in one bar. Four stat cards compare the chosen area with the country, and a school list shows what the filter selects.
-- **The rest of the data.** Six more charts and a Key findings panel sit behind a toggle, closed by default, so the page reads as an argument and not a wall.
+- **Explore your area.** Five cascading filters (Region, Province, Division, Municipality, Barangay) in a two column bar. Four compact stat tiles compare the chosen area with the country.
+- **Key findings on demand.** Each chart card has a small **i** button. It opens a short note and closes on a click outside or the Escape key, so the cards stay short.
+- **The rest of the data.** Six more charts sit below the filter. Most of them respond to it. The region treemap stays national and lets you click a tile to set the filter.
+- **A school list that never leaves a gap.** Until you pick a region, the list slot shows a short hint. After that it lists the largest schools and scrolls inside a fixed height, so the chart beside it keeps its size.
 - **Ask the data.** Type a question in plain English. Your own AI key (Groq or Gemini) writes the SQL, which runs read only in the browser. The SQL is shown for trust.
-- **Admin page.** A separate `/admin` area to upload, clean, publish, and remove datasets.
+- **Admin page.** A separate `/admin` area with a status card, a remove action with a confirm step, and an upload card beside a cleaning report.
 - **Clean any dataset.** Upload a CSV or Excel file. It is cleaned in your browser (encoding, junk characters, invalid values, name and address standardization) and downloadable. Nothing leaves your computer.
-- **Limits stated in the product.** An "About this data" panel names the source, the grain, and what the data cannot answer, so no one draws a conclusion it does not support.
+- **Limits stated in the product.** An "About this data" card names the source, the grain, and what the data cannot answer, so no one draws a conclusion it does not support.
 
 ## Design rules
 
@@ -54,24 +58,39 @@ The charts follow one set of rules, so a color always means the same thing.
 | Blue | The one thing to look at in a chart, such as the largest bar. |
 | Red | Worse than the national figure, or a priority region. Nothing else is red. |
 
-Other rules that apply everywhere:
+Other rules that apply everywhere.
 
 - Every chart title states what the chart shows, and the caveat sits in the subtitle.
 - Axes stay, start at zero, and have a title. Gridlines are removed.
 - Important bars carry their value as a direct label, so no legend is needed.
-- Gender uses two neutral grays. It is a comparison between two groups and not a warning.
+- Gender uses two shades of the brand blue. It is a comparison between two groups and not a warning, so red is never used for it.
+- Dark cards are used for two blocks only, the finding and the ask box, placed on opposite corners so the page stays balanced.
+- Every button comes from one component, so every action looks the same.
 
 The color roles live in `src/constants/theme.ts`, so changing them there changes every chart.
 
+## Layout
+
+The page uses one 12 column grid, called the bento grid. It is defined in `src/index.css`.
+
+- A row is a `div` with the class `aralite-bento`.
+- Each block sits in a wrapper with a span class, such as `bento-4` or `bento-7`. The spans in a row add up to 12.
+- The wrapper also carries `bento-fill`, so the card inside fills its cell. Blocks in one row stretch to the same height.
+- The wrapper always renders, so the grid keeps its shape while data loads.
+
+Row shapes on the dashboard are 4 + 4 + 4, then 12, then 5 + 7 for the explore row, then 7 + 5, 4 + 5 + 3, 5 + 7, and a last row of 7 + 5 for the limits card and the ask box.
+
+On screens up to 1100px wide, blocks go two per row. On screens up to 700px wide, everything stacks in one column.
+
 ## Data and method
 
-**Source:** DepEd Learner Information System, school level enrollment, SY 2023 to 2024 (as of 31 January 2024). Public data, downloaded as an Excel file.
+**Source.** DepEd Learner Information System, school level enrollment, SY 2023 to 2024 (as of 31 January 2024). Public data, downloaded as an Excel file.
 
-**Shape:** 60,167 rows, one per school, with 14 descriptive columns and 58 enrollment columns. Reshaped into roughly 3.5 million rows, one per school × grade × gender.
+**Shape.** 60,167 rows, one per school, with 14 descriptive columns and 58 enrollment columns. Reshaped into roughly 3.5 million rows, one per school × grade × gender.
 
 **The governing rule was zero data loss.** The cleaning script never deletes a row or a column. It repairs values in place and adds standardized copies alongside the originals, so every published number can be traced back to the source file.
 
-What `pipeline/clean.py` does:
+What `pipeline/clean.py` does.
 
 | Step | What and why |
 |---|---|
@@ -98,6 +117,7 @@ The quality report is the point of the whole script. Anyone can claim they clean
 | Data engine | DuckDB-WASM (real SQL in the browser) |
 | Storage format | Parquet |
 | Cleaning pipeline | Python, pandas |
+| Excel reading | xlsx, loaded only when a file is uploaded |
 | AI (optional) | Groq or Gemini, bring your own key |
 | Testing and CI | Vitest, GitHub Actions |
 | Hosting | Vercel |
@@ -123,30 +143,42 @@ DASHBOARD LANE (in the browser)
 The page is an argument, so the order matters.
 
 ```
-intro → finding → evidence → so what → explore your area → rest of the data → ask → limits
+banner → finding → evidence → so what → explore your area → background charts → limits and ask
 ```
 
 Everything above "Explore your area" is national and never changes when the filter moves. Only the sections below the filter respond to it. That keeps the top of the page stable, so the first thing a visitor reads is the same for everyone.
 
 ### Design decisions
 
-**The UI never touches the database directly.** Every chart follows the same path: component → `queries.ts` → `db.ts` → data. Each layer only knows the one below it, so a SQL change never requires opening a chart file, and a chart redesign never risks breaking a query.
+**The UI never touches the database directly.** Every chart follows the same path. Component, then `queries.ts`, then `db.ts`, then data. Each layer only knows the one below it, so a SQL change never requires opening a chart file, and a chart redesign never risks breaking a query.
 
-**Parquet plus DuckDB-WASM instead of a hosted database.** A 30MB Excel file becomes a few MB of compressed columnar data, and DuckDB runs real SQL over it inside the browser. No server means nothing to pay for or maintain, and when someone uploads their own file, it never leaves their computer. The trade-off is a slower first load while the engine downloads.
+**Parquet plus DuckDB-WASM instead of a hosted database.** A 30MB Excel file becomes a few MB of compressed columnar data, and DuckDB runs real SQL over it inside the browser. No server means nothing to pay for or maintain, and when someone uploads their own file, it never leaves their computer. The tradeoff is a slower first load while the engine downloads.
 
 **Uploaded and shipped data look identical to the charts.** Both feed the same `schools` and `enrollment` views, so a chart never needs to know which source it is reading.
 
-**Limits are stated in the product, not just the README.** The "About this data" panel names the source, the grain, and what the data cannot answer. Numbers without their caveats are how a dashboard misleads people who trust it.
+**Shared pieces keep the look in one place.** `Card` and `ChartBox` in `ui.tsx` draw every card. `InfoTip` holds the key finding behind a small button. `Button` has four variants (primary, danger, outline, outlineDanger). Changing one of them changes the whole page.
 
-### Three performance fixes worth knowing
+**Limits are stated in the product, not just the README.** The "About this data" card names the source, the grain, and what the data cannot answer. Numbers without their caveats are how a dashboard misleads people who trust it.
 
-Each of these came from something that actually broke.
+### The Admin page
+
+The Admin page uses the same bento grid as the dashboard.
+
+- **Row one.** A status card says which dataset is live, with a DEFAULT or CUSTOM badge. Beside it, a remove card restores the default data. It asks for a confirm step first.
+- **Row two.** The upload card sits on the left and the cleaning report sits on the right as a set of tiles. The report stays visible after the file is published.
+
+The live dataset name is kept in `src/lib/liveDataset.ts`, a small module variable. It outlives page changes, so the status is still right when you leave Admin and come back. It is not saved to disk, because the uploaded data lives in memory and disappears on refresh. The label has to disappear at the same moment.
+
+### Four performance fixes worth knowing
+
+Each of these came from something that actually broke or felt slow.
 
 | Problem | Fix |
 |---|---|
 | Many charts loading at once each started their own DuckDB worker, freezing the browser | Cache the boot **promise**, not the instance, so every caller awaits the same boot |
 | Browsers block loading a Worker straight from a CDN (CORS) | Wrap the CDN URL in a local blob so it counts as same origin |
 | A view recalculating a 58 column sum over 60,000 rows on every chart query | Materialize it as a table once at upload time instead |
+| The xlsx library added over 400 kB to the first load | Load it with a dynamic import, so it downloads only when someone uploads a file |
 
 ## Project structure
 
@@ -156,15 +188,30 @@ aralite/
 ├── data/                       # raw Excel + cleaned Parquet + quality_report.md
 ├── public/data/                # the Parquet files actually served to the browser
 ├── src/
-│   ├── App.tsx                 # router: / dashboard, /admin data management
+│   ├── App.tsx                 # router, / dashboard and /admin data management
+│   ├── index.css               # base styles and the 12 column bento grid
 │   ├── pages/
-│   │   ├── DashboardPage.tsx   # public view, composes every section
-│   │   └── AdminPage.tsx       # upload, clean, publish, remove datasets
-│   ├── components/             # StorySection (the finding), AvailabilitySection
-│   │                           # (the evidence), RecommendationSection (so what),
-│   │                           # FilterBar, StatCards, SchoolPanel, InsightsSection,
-│   │                           # chart sections, AskSection, DataNote, NavHeader,
-│   │                           # IntroPanel, Spinner, ui
+│   │   ├── DashboardPage.tsx   # public view, composes every section in bento rows
+│   │   └── AdminPage.tsx       # status, remove, upload and report
+│   ├── components/
+│   │   ├── HeroBanner.tsx          # slim top banner with the page header
+│   │   ├── StorySection.tsx        # the finding, on a dark card
+│   │   ├── AvailabilitySection.tsx # the evidence, rendered twice
+│   │   ├── RecommendationSection.tsx  # the so what
+│   │   ├── ExplorePanel.tsx        # filter and stat tiles in one row
+│   │   ├── FilterBar.tsx           # five cascading dropdowns
+│   │   ├── StatCards.tsx           # four numbers compared with the country
+│   │   ├── DropoffSection.tsx, RegionsSection.tsx, StrandsSection.tsx,
+│   │   │   StrandGenderSection.tsx, SectorSection.tsx, OfferingSection.tsx
+│   │   │                           # the background charts
+│   │   ├── SchoolPanel.tsx         # school list, with a hint before a filter is set
+│   │   ├── AskSection.tsx          # plain English to SQL, on a dark card
+│   │   ├── DataNote.tsx            # source, grain and limits
+│   │   ├── UploadSection.tsx       # upload, clean, report, publish
+│   │   ├── NavHeader.tsx, Spinner.tsx
+│   │   ├── ui.tsx                  # Card, ChartBox, Disclosure and other shared pieces
+│   │   ├── InfoTip.tsx             # the small i button that opens a key finding
+│   │   └── Button.tsx              # one button with four variants
 │   ├── lib/
 │   │   ├── db.ts               # DuckDB setup + upload reshaping
 │   │   ├── queries.ts          # all SQL lives here, describes the dataset
@@ -175,13 +222,14 @@ aralite/
 │   │   ├── format.ts           # one adaptive number formatter for every axis
 │   │   ├── cleaning.ts         # browser cleaning rules
 │   │   ├── cleaning.test.ts    # unit tests for those rules
-│   │   ├── ai.ts               # natural language → SQL (BYOK)
-│   │   └── filters.ts          # shared location filter logic
+│   │   ├── ai.ts               # natural language to SQL (BYOK)
+│   │   ├── filters.ts          # shared location filter logic
+│   │   └── liveDataset.ts      # remembers which dataset is live
 │   └── constants/theme.ts      # colors, chart color roles, design tokens
-├── analysis/strand-availability/   # the finding: notebook, script, charts, writeup
+├── analysis/strand-availability/   # the finding, notebook, script, charts, writeup
 ├── docs/LEARNING.md            # plain language walkthrough of the whole project
 ├── docs/WALKTHROUGH.md         # every file explained, with the question it answers
-└── .github/workflows/ci.yml    # lint + type-check + test on push to main and every PR
+└── .github/workflows/ci.yml    # lint, type check and test on push to main and every PR
 ```
 
 ## Run it locally
@@ -202,7 +250,7 @@ npm run dev
 
 Open the printed link, usually `http://localhost:5173`. The cleaned Parquet files ship with the repo, so there is nothing else to set up and no environment file to create.
 
-### 3. Optional: rebuild the data from the raw DepEd file
+### 3. Optional, rebuild the data from the raw DepEd file
 
 Needs Python with pandas and pyarrow, plus `data/raw.xlsx`.
 
@@ -220,26 +268,32 @@ Read `data/quality_report.md` afterwards to see exactly what the run repaired.
 ```bash
 npm test        # unit tests (Vitest)
 npm run lint    # code style (ESLint)
-npm run build   # type-check + production build
+npm run build   # type check + production build
 ```
 
 ### Common problems
 
 | Problem | Fix |
 |---|---|
-| `npm install` fails with an engine warning | You are on Node 18 or older. Upgrade to Node 20+ |
+| `npm install` fails with an engine warning | You are on Node 18 or older. Upgrade to Node 20 or newer |
 | Charts are empty and the console shows 404s | The Parquet files must be in `public/data/`, not only `data/` |
 | Rebuilt the data but nothing changed | The copy step above was skipped |
 | `clean.py` stops with an assertion error | Working as designed. The source file has a duplicate ID or a bad enrollment value. Fix the source and do not loosen the assert |
 | First load feels slow | Normal. The DuckDB WASM bundle downloads once, then caches |
 | An uploaded dataset vanishes on refresh | By design. Uploads live in browser memory only and are never sent anywhere |
+| The build warns that a chunk is over 500 kB | Known. See the honest notes below |
 
 ## Edit or modify it
 
 | I want to change... | Edit this file |
 |---|---|
 | Chart colors and what each color means | `src/constants/theme.ts` (the chart role colors) |
-| Card styles and spacing | `src/constants/theme.ts` and `src/components/ui.tsx` |
+| Card look and the shared pieces | `src/constants/theme.ts` and `src/components/ui.tsx` |
+| The text behind a chart's i button | the `finding` prop on that chart's `Card` |
+| How the i button opens and closes | `src/components/InfoTip.tsx` |
+| Button looks or variants | `src/components/Button.tsx` |
+| Row shapes, spans or when the layout stacks | `src/pages/DashboardPage.tsx` and the bento rules in `src/index.css` (breakpoints at 1100px and 700px) |
+| The order of sections on the page | `src/pages/DashboardPage.tsx` |
 | Any SQL query describing the dataset | `src/lib/queries.ts` |
 | The finding's queries and its national benchmark | `src/lib/story.ts` |
 | A calculation used by more than one component | `src/lib/metrics.ts` (then update `metrics.test.ts`) |
@@ -249,21 +303,25 @@ npm run build   # type-check + production build
 | Cleaning rules for the source dataset | `pipeline/clean.py` |
 | The AI prompt or model | `src/lib/ai.ts` |
 | Filter levels or cascade logic | `src/lib/filters.ts` and `src/components/FilterBar.tsx` |
-| The order of sections on the page | `src/pages/DashboardPage.tsx` |
-| The stat cards under the filter | `src/components/StatCards.tsx` |
-| The intro text a first time visitor reads | `src/components/IntroPanel.tsx` |
+| The stat tiles under the filter | `src/components/StatCards.tsx` |
+| The explore row | `src/components/ExplorePanel.tsx` |
+| The top banner and its three figures | `src/components/HeroBanner.tsx` |
+| The hint and list height in the school panel | `src/components/SchoolPanel.tsx` |
+| Admin page cards | `src/pages/AdminPage.tsx` |
+| Upload steps and the cleaning report tiles | `src/components/UploadSection.tsx` |
 | Data source, grain, or stated limits | `src/components/DataNote.tsx` |
-| Header, nav links, tricolor strip | `src/components/NavHeader.tsx` |
-| When the layout collapses to one column | the `820px` and `980px` media queries in `src/index.css` |
+| Header and nav links | `src/components/NavHeader.tsx` |
 | CI steps or Node version | `.github/workflows/ci.yml` |
 
-**To add a chart:** write the query in `queries.ts`, build a component in `components/`, then render it in `DashboardPage.tsx`. Never query DuckDB from a component. Use gray for the bars and the blue highlight for one bar only.
+**To add a chart.** Write the query in `queries.ts`, build a component in `components/`, then place it in a bento row in `DashboardPage.tsx`. Never query DuckDB from a component. Use gray for the bars and the blue highlight for one bar only. Pass a `finding` to the `Card` if the chart has a key finding to share.
 
-**To swap in a different dataset:** adjust `pipeline/clean.py`, run it, copy the output into `public/data/`, and check the quality report.
+**To add a button.** Use `Button` and pick a variant. Do not style a new one by hand.
+
+**To swap in a different dataset.** Adjust `pipeline/clean.py`, run it, copy the output into `public/data/`, and check the quality report.
 
 ## Limits
 
-Being direct about what this data cannot answer:
+Being direct about what this data cannot answer.
 
 - **It is a one time snapshot**, not a live feed. One school year, so no trends over time.
 - **The grain is the school, not the learner.** Aralite cannot follow individual students or explain why anyone left.
@@ -280,7 +338,11 @@ For the live pipeline version of this idea, with data that collects itself on a 
 
 So the tests now assert **numbers**, using real DepEd figures verified three ways. They were checked in the notebook, in the app's own SQL, and in an Excel sheet anyone can rerun. Each test is a bug that actually shipped. `queries.ts` still has no direct coverage, because testing it needs DuckDB in the test environment. The calculations it feeds were pulled into `metrics.ts`, which is tested.
 
-**The design pass had its own mistake.** My first cleanup removed the x-axis from the evidence charts to cut clutter. That made the bars impossible to read, because there was no way to tell what the numbers meant or how far they ranged. The axes came back, starting at zero and with a title, and only the gridlines stayed removed. Less clutter should never cost the reader the scale.
+**The design pass had its own mistake.** My first cleanup removed the x axis from the evidence charts to cut clutter. That made the bars impossible to read, because there was no way to tell what the numbers meant or how far they ranged. The axes came back, starting at zero and with a title, and only the gridlines stayed removed. Less clutter should never cost the reader the scale.
+
+**The layout change removed a toggle.** The background charts used to sit behind a closed toggle. In the bento layout they are always visible, so the page is longer to scroll, but nothing is hidden and every row lines up.
+
+**The main bundle still triggers a size warning.** The build splits `xlsx` into its own chunk of about 425 kB. The main chunk is about 904 kB, or 255 kB gzipped, and Vite warns about anything over 500 kB. It holds React, Recharts and the DuckDB code, which the dashboard needs on first load. Splitting it further would not make the first visit faster, so I left it and kept the warning visible instead of raising the limit.
 
 **The cleaned street address column is unused.** `clean.py` builds `Street Address Clean` for future mapping or geocoding work. Nothing reads it yet.
 
@@ -290,7 +352,7 @@ So the tests now assert **numbers**, using real DepEd figures verified three way
 
 ## Credits
 
-Data: DepEd Learner Information System, SY 2023 to 2024.
+Data from the DepEd Learner Information System, SY 2023 to 2024.
 
 Aralite is an independent self learning project. It uses real public DepEd data but is not affiliated with the Department of Education, and no part of it has been adopted or reviewed by them.
 
