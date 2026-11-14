@@ -4,22 +4,29 @@
 // when it is DepEd format, load it straight into the dashboard.
 // Nothing leaves the user's computer. There is no server.
 //
+// The xlsx library is large, so it is loaded with a dynamic import inside
+// handleFile. It downloads only when someone picks a file, and the rest of
+// the app does not pay for it.
+//
 // Layout. One bento row. The upload card sits on the left (5 columns)
 // and the cleaning report sits on the right (7 columns) as a set of
 // tiles. The report stays visible after the file is published.
 
 import { useRef, useState } from 'react';
-import * as XLSX from 'xlsx';
+import type { WorkSheet } from 'xlsx';
 import { cleanTable, looksLikeDepEd, toCSV, type CleanReport } from '../lib/cleaning';
 import { loadUploadedData } from '../lib/db';
 import { colors } from '../constants/theme';
 import { Card } from './ui';
 import Button from './Button';
 
+// The type of the xlsx module, used to pass the loaded library around.
+type XlsxModule = typeof import('xlsx');
+
 // Some files (like the DepEd export) have title rows before the real
 // header. This finds the row with real column names, the browser version
 // of pandas' header=4.
-function findHeaderRow(sheet: XLSX.WorkSheet): number {
+function findHeaderRow(XLSX: XlsxModule, sheet: WorkSheet): number {
   const grid = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: '' });
   for (let i = 0; i < Math.min(grid.length, 10); i++) {
     const cells = (grid[i] as unknown[]).map((c) => String(c).trim());
@@ -94,10 +101,13 @@ export default function UploadSection({
   async function handleFile(file: File) {
     setState({ step: 'working' });
     try {
+      // Loads the xlsx library on first use. Later uploads reuse it.
+      const XLSX = await import('xlsx');
+
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf);
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      const header = findHeaderRow(sheet);
+      const header = findHeaderRow(XLSX, sheet);
       const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
         defval: '',
         range: header,
